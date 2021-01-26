@@ -1,5 +1,5 @@
 
-import simupynk.components as comps
+import Simupynk.components as comps
 
 
 class TestComp(comps.BaseComponent):

@@ -23,7 +23,7 @@ The classes on this module are based on the following source:
 
 from inspect import isabstract
 from abc import ABCMeta, abstractmethod  # Don't remove abstractmethod
-from simupynk.utils.cls_prop import CPEnabledMeta, classproperty
+from Simupynk.utils.cls_prop import CPEnabledMeta, classproperty
 
 
 def _findABCFromBases(bases):

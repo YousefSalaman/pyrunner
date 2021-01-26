@@ -1,5 +1,5 @@
 
-from simupynk.runners import BaseRunner
+from Simupynk.runners import BaseRunner
 
 
 class SequentialRunner(BaseRunner):

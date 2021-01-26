@@ -2,8 +2,8 @@
 This package contains all the components of the Simupynk system.
 """
 
-from simupynk.utils.cls_prop import classproperty
-from simupynk.utils.type_abc import CPEnabledTypeABC, abstractclassproperty, abstractmethod
+from Simupynk.utils.cls_prop import classproperty
+from Simupynk.utils.type_abc import CPEnabledTypeABC, abstractclassproperty, abstractmethod
 
 
 __all__ = []

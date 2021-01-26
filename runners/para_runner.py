@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import multiprocessing as mp
-from simupynk.runners import BaseRunner
+from Simupynk.runners import BaseRunner
 
 
 class ParallelRunner(BaseRunner):
