@@ -1,0 +1,185 @@
+
+from Simupynk.utils.cls_prop import classproperty
+from Simupynk.utils.type_abc import CPEnabledTypeABCMeta, CPEnabledTypeABC, abstractmethod, abstractclassproperty
+from unittest import TestCase
+import pytest
+
+
+class BarMeta(metaclass=CPEnabledTypeABCMeta):
+
+    _foo = 0
+    _bar = 1
+
+    def __init__(self):
+        self._bee = 3
+
+    @classmethod
+    @abstractmethod
+    def foo(cls):
+        pass
+
+    @abstractclassproperty
+    def bar(cls):
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def fab():
+        pass
+
+    @property
+    @abstractmethod
+    def bee(self):
+        pass
+
+
+class Bar(CPEnabledTypeABC):
+
+    _foo = 0
+    _bar = 1
+
+    def __init__(self):
+        self._bee = 3
+
+    @classmethod
+    @abstractmethod
+    def foo(cls):
+        pass
+
+    @abstractclassproperty
+    def bar(cls):
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def fab():
+        pass
+
+    @property
+    @abstractmethod
+    def bee(self):
+        pass
+
+
+class ChildBar(Bar):
+
+    @classproperty  # If you remove this method, it should cause an TypeError (intended)
+    def bar(cls):
+        return cls._bar
+
+    @bar.setter
+    def bar(cls, value):
+        cls._bar = value
+
+    @classmethod  # If you remove this method, it should cause an TypeError (intended)
+    def foo(cls):
+        return cls._foo
+
+    @staticmethod  # If you remove this method, it should cause an TypeError (intended)
+    def fab():
+        return 0
+
+    @property  # If you remove this method, it should cause an TypeError (intended)
+    def bee(self):
+        return self._bee
+
+    @bee.setter
+    def bee(self, value):
+        print("Set the bee value")
+        self._bee = value
+
+
+class ChildBarMeta(BarMeta):
+
+    @classproperty  # If you remove this method it should cause an TypeError (intended)
+    def bar(cls):
+        return cls._bar
+
+    @bar.setter
+    def bar(cls, value):
+        cls._bar = value
+
+    @classmethod  # If you remove this method it should cause an TypeError (intended)
+    def foo(cls):
+        return cls._foo
+
+    @staticmethod  # If you remove this method it should cause an TypeError (intended)
+    def fab():
+        return 0
+
+    @property  # If you remove this method it should cause an TypeError (intended)
+    def bee(self):
+        return self._bee
+
+    @bee.setter
+    def bee(self, value):
+        print("Set the bee value")
+        self._bee = value
+
+class TestingABCs(TestCase):
+    a = ChildBar()
+
+    print(a.foo())
+    print(a.bar)
+    print(ChildBar.bar)
+    print(a.fab())
+    print(a.bee)
+
+    a.bar = 10
+    a.bee = 30
+    print(a.bar)
+    print(a.bee)
+
+    print(ChildBar.bar)
+    ChildBar.bar = 2
+    print(ChildBar.bar)
+
+    b = ChildBarMeta()
+
+    print(b.foo())
+    print(b.bar)
+    print(ChildBarMeta.bar)
+    print(b.fab())
+    print(b.bee)
+
+    b.bar = 10
+    b.bee = 30
+    print(b.bar)
+    print(b.bee)
+
+    print(ChildBarMeta.bar)
+    ChildBarMeta.bar = 2
+    print(ChildBarMeta.bar)
+
+    def testDeletions(self):
+
+        a = ChildBar()
+        print(a.bar)
+        print(a.foo)
+        print(a.fab)
+        print(a.bee)
+
+        with pytest.raises(AttributeError):
+            del a.bar
+            print(a.bar)
+
+            del a.foo
+            print(a.foo)
+
+            del a.fab
+            print(a.fab)
+
+            del a.bee
+            print(a.bee)
+
+
+
+
+
+
+
+
+
+
+
+
