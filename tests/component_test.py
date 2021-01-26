@@ -19,12 +19,10 @@ class InitComp(comps.BaseComponent):
         print("Just a test")
         super().generateComponentString()
 
-
-class TesterComp(TestCase):
-
-    def verifyInputSizeTest(self):
+class TestBaseComponent(TestCase):
+    def test_verify_input_size(self):
         a = InitComp(inputs=[])
-        b = InitComp(inputs=[0,1,2,3])  # Should give you an Attribute error for
+        b = InitComp(inputs=[0, 1, 2, 3])  # Should give you an Attribute error for range error
         with pytest.raises(AttributeError):
             a.verifyInputSize()
             b.verifyInputSize()

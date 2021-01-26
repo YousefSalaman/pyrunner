@@ -29,7 +29,7 @@ class Foo(CPEnabled):  # testing CPEnabled
         del cls._bar
 
 
-class Foo1(metaclass=CPEnabledMeta):  # testing CPEnabledMeta
+class FooMeta(metaclass=CPEnabledMeta):  # testing CPEnabledMeta
     _bar = 0
 
     @classproperty
@@ -61,7 +61,7 @@ class TestingFoos(TestCase):
         object = Foo()
         self.assertEqual(object.bar, 1, "The value of the func should be 1.")
 
-        object = Foo1()
+        object = FooMeta()
         self.assertEqual(object.bar, 1, "The value of the func should be 1.")
 
     def test_setter(self):
@@ -72,7 +72,7 @@ class TestingFoos(TestCase):
         Foo.bar = 2
         self.assertEqual(Foo.bar, 1, "The expected result is 1")
 
-        object = Foo1()
+        object = FooMeta()
         object.bar = 1
         self.assertEqual(object.bar, 1, "The expected result is 1")
         Foo.bar = 2
@@ -86,7 +86,7 @@ class TestingFoos(TestCase):
             print(Foo._bar)  # It's suppose to give an error since the property is deleted by the deleter
             print(Foo.bar)  # This will also yield an error
 
-            object = Foo1()
+            object = FooMeta()
             del object.bar
             print(Foo._bar)  # It's suppose to give an error since the property is deleted by the deleter
             print(Foo.bar)  # This will also yield an error
