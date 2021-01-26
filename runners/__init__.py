@@ -7,7 +7,8 @@ set-ups and functions to run a system are contained within the runner objects
 and these can be ran indirectly through the method runSystem method.
 """
 
-from Simupynk.utils.type_abc import TypeABC, abstractmethod
+from abc import abstractmethod
+from Simupynk.utils.type_abc import TypeABC
 
 
 __all__ = ["seq_runner", "para_runner"]

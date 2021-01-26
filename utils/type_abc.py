@@ -21,8 +21,8 @@ The classes on this module are based on the following source:
         https://github.com/python/cpython/blob/master/Lib/abc.py
 """
 
+from abc import ABCMeta
 from inspect import isabstract
-from abc import ABCMeta, abstractmethod  # Don't remove abstractmethod
 from Simupynk.utils.cls_prop import CPEnabledMeta, classproperty
 
 
