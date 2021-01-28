@@ -15,10 +15,11 @@ class BaseComponent(CPEnabledTypeABC):
     Base class for component objects.
     """
 
-    def __init__(self, name=None, inputs=None):  # Inputs might not be needed for all components
+    def __init__(self, name=None, inputs=None, sys_obj = None):  # Inputs might not be needed for all components
 
-        self.comp_name = name
-        self.comp_inputs = inputs
+        self.sys = sys_obj  # System that contains object
+        self.comp_name = name  # Name of the component
+        self.comp_inputs = inputs  # Inputs for the component
 
     @abstractclassproperty
     def default_name(self):
@@ -32,13 +33,6 @@ class BaseComponent(CPEnabledTypeABC):
         """States whether or not a component has initial conditions."""
 
     @abstractclassproperty
-    def short_name(self):
-        """
-        Short name for a component type. It's used instead of the default name
-        if the resulting name of the component is too long.
-        """
-
-    @abstractclassproperty
     def input_lim(self):
         """
         The input range limiter for a component. It dictates how many input
@@ -46,7 +40,7 @@ class BaseComponent(CPEnabledTypeABC):
         """
 
     @abstractmethod
-    def generateComponentString(self):
+    def generateComponentString(self) -> str:
         """
         This generates the functionality of the component within a string.
         """
@@ -84,15 +78,6 @@ _DEFAULT_NAME_DOC = """
         """  # Docstring for default_name
 
 generateDefaultName = _constant_classproperty_helper_factory("default_name", _DEFAULT_NAME_DOC)  # Helper function
-
-# "short_name" attribute
-
-_SHORT_NAME_DOC = """
-        Short name for a component type. It's used instead of the default name
-        if the resulting name of the component is too long.
-        """
-
-generateShortName = _constant_classproperty_helper_factory("short_name", _SHORT_NAME_DOC)  # Helper function
 
 # "input_lim" attribute
 

@@ -1,5 +1,6 @@
+from abc import abstractmethod
 from Simupynk.utils.cls_prop import classproperty
-from Simupynk.utils.type_abc import CPEnabledTypeABCMeta, CPEnabledTypeABC, abstractmethod, abstractclassproperty
+from Simupynk.utils.type_abc import CPEnabledTypeABCMeta, CPEnabledTypeABC, abstractclassproperty
 from unittest import TestCase
 import pytest
 

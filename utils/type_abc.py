@@ -47,16 +47,12 @@ def _checkTypeConsistency(method, abs_method):
 
     method_type = type(method)
     abs_method_type = type(abs_method)
-
-    # This verification is for built-in python classes
-    if method_type is not abs_method_type and method_type is not classproperty:
+    if all(method_type is not cls for cls in abs_method_type.__mro__ if cls is not object):
         if hasattr(abs_method, "__func__"):  # Case for method classes
-            raise TypeError('"{}" must be of type "{}"'.format(abs_method.__func__.__name__, type(abs_method).__name__))
-        raise TypeError('One of the overridden methods does not match the original type of its respective ABC')
-
-    # This one is for the custom classproperty class since their classes don't match
-    if abs_method_type is abstractclassproperty and method_type is not classproperty:
-        raise TypeError('One of the overridden methods does not match the original type of its respective ABC')
+            func_name = abs_method.__func__.__name__
+            possible_types = [cls.__name__ for cls in abs_method_type.__mro__ if cls is not object]
+            raise TypeError('The method "{}" must be one of the following types: {}.'.format(func_name, possible_types))
+        raise TypeError('One of the overridden methods does not match any of the possible types dictated by the ABC.')
 
 
 class abstractclassproperty(classproperty):

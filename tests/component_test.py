@@ -8,8 +8,6 @@ class InitComp(comps.BaseComponent):
 
     has_init_cond = comps.HAS_INIT_COND_TRUE
 
-    short_name = comps.generateShortName("t")
-
     input_lim = comps.generateInputLim((1, 3))  # Input ranges from 1 to 3
 
     default_name = comps.generateDefaultName("test")
