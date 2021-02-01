@@ -11,7 +11,7 @@ this functionality work correctly.
 
 The ABCMeta metaclass was used to build the metaclass TypeABCMeta to detect
 type consistency at class creation, so it gurantees the user overrides the
-method. The new metaclass was mixed in with the classproperty metaclass,
+interface's method with the correct type. The new metaclass was mixed in with the classproperty metaclass,
 CPEnabledMeta, to fuse both features together in case someone wants to use both
 at the same time.
 
@@ -51,7 +51,7 @@ def _checkTypeConsistency(method, abs_method):
         if hasattr(abs_method, "__func__"):  # Case for method classes
             func_name = abs_method.__func__.__name__
             possible_types = [cls.__name__ for cls in abs_method_type.__mro__ if cls is not object]
-            raise TypeError('The method "{}" must be one of the following types: {}.'.format(func_name, possible_types))
+            raise TypeError(f'The method "{func_name}" must be one of the following types: {possible_types}.')
         raise TypeError('One of the overridden methods does not match any of the possible types dictated by the ABC.')
 
 

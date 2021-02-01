@@ -47,13 +47,13 @@ class classproperty:
 
         # Generate classproperty's fget, fset, and fdel
         def read_only_setter(*args):  # This prevents  user from changing the value
-            raise AttributeError('Class attribute "{}" cannot change its value'.format(name))
+            raise AttributeError(f'Class attribute "{name}" cannot change its value')
 
         def constant_getter(_):  # This will always get a constant value
             return value
 
         def read_only_deleter(_):  # This prevents a user from deleting the value
-            raise AttributeError('Class attribute "{}" cannot be deleted'.format(name))
+            raise AttributeError(f'Class attribute "{name}" cannot be deleted')
 
         const_cls_prop = classproperty(constant_getter, read_only_setter, read_only_deleter, doc)
         const_cls_prop.name = name  # Set property name
@@ -68,7 +68,7 @@ class classproperty:
     def __get__(self, obj, cls=None):
 
         if self._fget is None:  # Verify if getter was set
-            raise AttributeError('No getter method has been set for classproperty "{}"'.format(self.name))
+            raise AttributeError(f'No getter method has been set for classproperty "{self.name}"')
         if cls is None:
             cls = type(obj)
 
@@ -79,14 +79,14 @@ class classproperty:
     def __set__(self, obj, value):
 
         if self._fset is None:  # Verify if setter was set
-            raise AttributeError('No setter method has been set for classproperty "{}"'.format(self.name))
+            raise AttributeError(f'No setter method has been set for classproperty "{self.name}"')
         obj, cls = self._getFunctionArguments(obj)
         return self._fset.__get__(obj, cls)(value)
 
     def __delete__(self, obj):
 
         if self._fdel is None:  # Verify if deleter was set
-            raise AttributeError('No deleter method has been set for classproperty "{}"'.format(self.name))
+            raise AttributeError(f'No deleter method has been set for classproperty "{self.name}"')
         obj, cls = self._getFunctionArguments(obj)
         self._fdel.__get__(obj, cls)()
 
@@ -117,7 +117,7 @@ class classproperty:
 
         if func is not None:
             if isinstance(func, staticmethod):
-                raise TypeError("{} cannot be a staticmethod".format(func.__func__.__name__))
+                raise TypeError(f"{func.__func__.__name__} cannot be a staticmethod")
             if isinstance(func, classmethod):
                 return func
             return classmethod(func)
@@ -184,6 +184,6 @@ def _generateProtocolEntryDenial(protocol_name):
     """
 
     def deny_protocol_override(*args):
-        raise AttributeError("Cannot modify class attribute's {}".format(protocol_name))
+        raise AttributeError(f"Cannot modify class attribute's {protocol_name}")
 
     return deny_protocol_override

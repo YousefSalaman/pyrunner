@@ -29,18 +29,13 @@ class NameManager:
         registered in the system's name manager.
         """
 
-        comp_name = ""
         comp_obj_sys = comp_obj.sys  # Component's system container
+        main_sys = comp_obj_sys.main_sys  # System that contains all components
+        is_a_system = hasattr(comp_obj, "sys_comps")  # If component is a system
 
-        if hasattr(comp_obj, "name_mgr"):  # If component is system component
-            if comp_obj_sys is not None:  # If system is not the "main" system
-                comp_name += comp_obj_sys.name
-
-        else:  # If component is not a system component
-            comp_name += comp_obj.default_name
-            if comp_obj_sys.sys is not None:  # If component's container system is not the "main" system
-                comp_name += "_" + comp_obj_sys.default_name
-
+        comp_name = comp_obj.default_name
+        if not (comp_obj_sys is main_sys or is_a_system):
+            comp_name += "_" + comp_obj_sys.name
         return self._registerComponentName(comp_name)
 
     def verifyCustomComponentName(self, comp_name):
@@ -51,7 +46,7 @@ class NameManager:
         """
 
         if comp_name in self._sys_var_names:
-            raise NameError('The name "{}" was registered more than once.'.format(comp_name))
+            raise NameError(f'The name "{comp_name}" was registered more than once.')
         return self._registerComponentName(comp_name)
 
     def _registerComponentName(self, comp_name):
