@@ -31,6 +31,24 @@ class BaseComponent(CPEnabledTypeABC):
             return self.default_name
         return self.name
 
+    @property
+    def inputs(self):  # TODO: Elaborate more on how inputs work
+        """Inputs for the component."""
+
+        return self._input
+
+    @property
+    def outputs(self):  # TODO: Elaborate more on how outputs work
+        """Outputs for the component."""
+
+        return self._output
+
+    @property
+    def parameters(self):  # TODO: Elaborate more on how parameters work
+        """Parameters used for calculations in the system."""
+
+        return self._parameter
+
     def verifyComponentProperties(self):
         """
         Verify if the component's properties follows the component's set of
