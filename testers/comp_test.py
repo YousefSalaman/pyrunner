@@ -36,10 +36,10 @@ def testing_comps():
     a.outputs["result"] = a_out
     a.outputs["result1"] = a_out_1
 
-    a_para = InitCompInvariant(sys_obj)
-    a_para_1 = InitCompVariant(sys_obj)
+    a_para = 1.23456789
+    a_para_1 = 42
 
-    a.parameters.update(para=a_out, para1=a_out_1)
+    a.parameters.update(para=a_para, para1=a_para_1)
 
     a.verify_component_properties()  # Nothing will happen since all required properties were filled with a value
 
@@ -53,16 +53,16 @@ def testing_comps():
     assert b.parameters == {}, "Expected result is {}"
 
     with pytest.raises(KeyError):
-        b.inputs[
+        b.parameters[
             "incorrect_key"] = 4  # Will result in KeyError because "incorrect_key" does not conform with the generated key format
 
     b_0 = InitCompInvariant(sys_obj)
     b_1 = InitCompVariant(sys_obj)
     b_2 = InitCompVariant(sys_obj)
 
-    b.inputs.update(b_0, b_1, b_2, 3.1415, 42)
+    b.inputs.update(b_0, b_1, b_2, "3.1415", "testing")
     b.outputs.update(b_1, 42)
-    b.parameters.update(b_2, 3.1415, 42)
-    b.outputs["output_1"] = 3.1415  # You can change/add components if the key conforms to the generated key format
+    b.parameters.update(3.1415, 42)
+    b.outputs["output_1"] = 3  # You can change/add components if the key conforms to the generated key format
 
     print(b.inputs, b.outputs, b.parameters)

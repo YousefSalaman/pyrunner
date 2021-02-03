@@ -3,6 +3,7 @@ This package contains all the components of the Simupynk system.
 """
 
 import re
+import numpy as np
 from numbers import Number
 from abc import abstractmethod
 from Simupynk.utils.cls_prop import classproperty
@@ -18,11 +19,13 @@ class BaseComponent(CPEnabledTypeABC):
 
     def __init__(self, sys_obj, name=None):  # Inputs might not be needed for all components
 
+        self._verify_if_component_is_main_system(sys_obj)
+
         self.sys = sys_obj  # System that contains object
-        self.name = self._assign_component_name(name)
-        self._input = self._init_component_property("input", self.input_info)
-        self._output = self._init_component_property("output", self.output_info)
-        self._parameter = self._init_component_property("parameter", self.parameter_info)
+        self.name = self._assign_component_name(name)  # Name of the component
+        self._input = self._init_component_property("input", self.input_info, (BaseComponent, str))
+        self._output = self._init_component_property("output", self.output_info, (BaseComponent, int))
+        self._parameter = self._init_component_property("parameter", self.parameter_info, (Number, np.generic, np.ndarray))
 
     def __repr__(self):
 
@@ -71,11 +74,11 @@ class BaseComponent(CPEnabledTypeABC):
         return self.sys.register_component_name_in_system(self)  # This will output the actual name for the component
 
     @staticmethod
-    def _init_component_property(prop_type, prop_info):
+    def _init_component_property(prop_name, prop_info, prop_types):
 
         if prop_info is None:
-            return _ComponentPropertyDict({}, prop_type, prop_info)
-        return _ComponentPropertyDict({prop_name: None for prop_name in prop_info[1]}, prop_type, prop_info)
+            return _ComponentPropertyDict({}, prop_name, prop_info, prop_types)
+        return _ComponentPropertyDict({prop_name: None for prop_name in prop_info[1]}, prop_name, prop_info, prop_types)
 
     def _verify_required_component_properties(self, comp_prop, prop_info):
 
@@ -83,6 +86,11 @@ class BaseComponent(CPEnabledTypeABC):
         for req_prop in req_props:
             if comp_prop[req_prop] is None:
                 raise TypeError(f'"{req_prop}" was not overwritten for component the component "{self}"')
+
+    def _verify_if_component_is_main_system(self, sys_obj):
+
+        if sys_obj is None and not hasattr(self, "sys_comps"):
+            raise TypeError("Non-system components must reside in a system component")
 
     @abstractclassproperty
     def default_name(self):
@@ -159,9 +167,14 @@ class _ComponentPropertyDict(dict):
         access and modify the value or use the update method.
     """
 
-    def __init__(self, new_dict, prop_type, prop_info):
+    _allowed_prop_types = {}
 
-        self.prop_type = prop_type  # Property name
+    def __init__(self, new_dict, prop_name, prop_info, prop_types):
+
+        self.prop_name = prop_name  # Property name
+        if prop_name not in self._allowed_prop_types:
+            self._allowed_prop_types[prop_name] = prop_types
+
         self._determine_property_order_invariance(prop_info)
 
         super().__init__(new_dict)
@@ -169,20 +182,21 @@ class _ComponentPropertyDict(dict):
     def __setitem__(self, key, value):
 
         # Checks correct value types
-        if not isinstance(value, (BaseComponent, Number)):
-            raise TypeError("The value you entered is neither a component nor an integer")
+        prop_types = self._allowed_prop_types[self.prop_name]
+        if not isinstance(value, prop_types):
+            raise TypeError(f'The value "{value}" must be one of these types: {prop_types}')
 
         # This checks/matches if the key was generated (at least try) by this
         # class
-        if self.is_order_invariant and not re.match(self.prop_type + "_[0-9]+", key):
+        if self.is_order_invariant and not re.match(self.prop_name + "_[0-9]+", key):
             raise KeyError(
                 "Custom keys cannot be entered for order-invariant systems. Use the update method to register"
                 + " components or numbers.")
 
         # This check if the key is part of the set properties of the component
         if not (self.is_order_invariant or key in self):
-            prop_names = list(self.keys())
-            raise KeyError(f"{key} is not among these properties: {prop_names}")
+            prop_vars = list(self.keys())
+            raise KeyError(f"{key} is not among these variables: {prop_vars}")
 
         super().__setitem__(key, value)
 
@@ -198,9 +212,9 @@ class _ComponentPropertyDict(dict):
         if self.is_order_invariant:
             for value in args:
                 self.count += 1
-                self[self.prop_type + f"_{self.count}"] = value
+                self[self.prop_name + f"_{self.count}"] = value
 
-        for key, value in kwargs.items():  # TODO: Check if dict is necessary for this
+        for key, value in kwargs.items():
             self[key] = value
 
     def _determine_property_order_invariance(self, prop_info):
@@ -236,7 +250,7 @@ def _constant_classproperty_helper_factory(name, types):
 # These functions will generate the corresponding attribute (while ensuring it has the correct type for the attribute)
 
 generate_default_name = _constant_classproperty_helper_factory("default_name", str)
+generate_has_init_cond = _constant_classproperty_helper_factory("has_init_cond", bool)
 generate_input_info = _constant_classproperty_helper_factory("input_info", (tuple, type(None)))
 generate_output_info = _constant_classproperty_helper_factory("output_info", (tuple, type(None)))
 generate_parameter_info = _constant_classproperty_helper_factory("parameter_info", (tuple, type(None)))
-generate_has_init_cond = _constant_classproperty_helper_factory("has_init_cond", bool)
