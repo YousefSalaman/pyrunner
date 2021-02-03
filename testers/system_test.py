@@ -1,7 +1,6 @@
 import pytest
 from Simupynk.testers.component_init import InitCompSystem, InitCompInvariant, InitCompVariant
 
-
 def testingSys():
 
     SystemObj = InitCompSystem("System1")
