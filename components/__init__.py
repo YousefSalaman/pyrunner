@@ -8,7 +8,6 @@ from abc import abstractmethod
 from Simupynk.utils.cls_prop import classproperty
 from Simupynk.utils.type_abc import CPEnabledTypeABC, abstractclassproperty
 
-
 __all__ = []
 
 
@@ -19,11 +18,6 @@ class BaseComponent(CPEnabledTypeABC):
 
     def __init__(self, sys_obj, name=None):  # Inputs might not be needed for all components
 
-        # Check if component is contained within a system
-        if not hasattr(self, "sys_comps") and sys_obj is None:
-            raise TypeError('Non-system components must reside in within a system component')
-
-        # Initialize attributes for the component
         self.sys = sys_obj  # System that contains object
         self.name = self._assign_component_name(name)
         self._input = self._init_component_property("input", self.input_info)
