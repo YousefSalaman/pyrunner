@@ -2,6 +2,7 @@
 import pytest
 from unittest import TestCase
 import Simupynk.components as comps
+from Simupynk.components.systems import BaseSystem
 
 
 INPUT_INFO = (
@@ -30,7 +31,7 @@ class InitCompVariant(comps.BaseComponent):
 
     parameter_info = comps.generate_parameter_info(PARAMETER_INFO)
 
-    default_name = comps.generate_default_name("test")
+    default_name = comps.generate_default_name("test_var")
 
     def generate_component_string(self):
 
@@ -48,7 +49,24 @@ class InitCompInvariant(comps.BaseComponent):
 
     parameter_info = comps.generate_parameter_info(None)
 
-    default_name = comps.generate_default_name("test")
+    default_name = comps.generate_default_name("test_inv")
+
+    def generate_component_string(self):
+
+        print("Just a test")
+        super().generate_component_string()
+
+class InitCompSystem(BaseSystem):
+
+    has_init_cond = comps.generate_has_init_cond(True)
+
+    input_info = comps.generate_input_info(None)
+
+    output_info = comps.generate_output_info(None)
+
+    parameter_info = comps.generate_parameter_info(None)
+
+    default_name = comps.generate_default_name("System")
 
     def generate_component_string(self):
 
@@ -58,11 +76,16 @@ class InitCompInvariant(comps.BaseComponent):
 def testingComps():
     ## Order variant component
 
-    a = InitCompVariant()
+    SystemObj = InitCompSystem("System1")
 
-    a_in = InitCompInvariant()
-    a_in_1 = InitCompVariant()
-    a_in_2 = InitCompVariant()
+    a = InitCompVariant(SystemObj)
+    assert str(a) == "test_var"
+    a_in = InitCompInvariant(SystemObj)
+    assert str(a_in) == "test_inv"
+    a_in_1 = InitCompVariant(SystemObj)
+    assert str(a_in_1) == "test_var_1"
+    a_in_2 = InitCompVariant(SystemObj , "dummy_var")
+    assert str(a_in_2) == "dummy_var"
 
     a.inputs["test1"] = a_in_1
     a.inputs["test2"] = a_in_2
@@ -73,8 +96,8 @@ def testingComps():
 
     # Note that running a.verify_component_properties() will still result in the TypeError since
     # the method verifies each of the properties of that object
-    a_out = InitCompInvariant()
-    a_out_1 = InitCompVariant()
+    a_out = InitCompInvariant(SystemObj)
+    a_out_1 = InitCompVariant(SystemObj)
     a_out_2 = "Just a test"
 
     with pytest.raises(KeyError):
@@ -86,8 +109,8 @@ def testingComps():
     a.outputs["result"] = a_out
     a.outputs["result1"] = a_out_1
 
-    a_para = InitCompInvariant()
-    a_para_1 = InitCompVariant()
+    a_para = InitCompInvariant(SystemObj)
+    a_para_1 = InitCompVariant(SystemObj)
 
     a.parameters.update(para=a_out, para1=a_out_1)
 
@@ -97,7 +120,7 @@ def testingComps():
 
     ## Order-invariant component
 
-    b = InitCompInvariant()
+    b = InitCompInvariant(SystemObj)
     assert b.inputs == {}, "Expected result is {}"
     assert b.outputs == {}, "Expected result is {}"
     assert b.parameters == {}, "Expected result is {}"
@@ -105,9 +128,9 @@ def testingComps():
     with pytest.raises(KeyError):
         b.inputs["incorrect_key"] = 4  # Will result in KeyError because "incorrect_key" does not conform with the generated key format
 
-    b_0 = InitCompInvariant()
-    b_1 = InitCompVariant()
-    b_2 = InitCompVariant()
+    b_0 = InitCompInvariant(SystemObj)
+    b_1 = InitCompVariant(SystemObj)
+    b_2 = InitCompVariant(SystemObj)
 
     b.inputs.update(b_0, b_1, b_2, 3.1415, 42)
     b.outputs.update(b_1, 42)
