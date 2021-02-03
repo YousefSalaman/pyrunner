@@ -8,7 +8,7 @@ class SequentialRunner(BaseRunner):
 
         super().__init__(group_key, group_funcs, group_vars, group_trans)
 
-    def run_system_private(self, group_key, sys_name, **kwargs):
+    def _run_system_private(self, group_key, sys_name, **kwargs):
 
         curr_sys_vars = self.group_vars[sys_name]
         sys_func = self.group_func_lists[sys_name]

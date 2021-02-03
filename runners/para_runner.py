@@ -21,7 +21,7 @@ class ParallelRunner(BaseRunner):
 
         super().__init__(group_key, group_func_lists, group_vars, group_trans)
 
-    def run_system_private(self, group_key, sys_name, kwargs):
+    def _run_system_private(self, group_key, sys_name, kwargs):
 
         self.act_sys[group_key] = sys_name  # Update the active system
         self.group_vars.update(kwargs)  # Update the necessary variables before running
