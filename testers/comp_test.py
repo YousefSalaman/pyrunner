@@ -1,16 +1,18 @@
-
 import pytest
-from Simupynk.testers.component_init import InitCompSystem, InitCompInvariant, InitCompVariant
+from Simupynk.testers.comp_init import InitCompSystem
+from Simupynk.testers.comp_init import InitCompInvariant
+from Simupynk.testers.comp_init import InitCompVariant
 
-def testingComps():
+
+def testing_comps():
     ## Order variant component
 
-    SystemObj = InitCompSystem("System1")
+    sys_obj = InitCompSystem("System1")
 
-    a = InitCompVariant(SystemObj)
-    a_in = InitCompInvariant(SystemObj)
-    a_in_1 = InitCompVariant(SystemObj)
-    a_in_2 = InitCompVariant(SystemObj , "dummy_var")
+    a = InitCompVariant(sys_obj)
+    a_in = InitCompInvariant(sys_obj)
+    a_in_1 = InitCompVariant(sys_obj)
+    a_in_2 = InitCompVariant(sys_obj, "dummy_var")
 
     a.inputs["test1"] = a_in_1
     a.inputs["test2"] = a_in_2
@@ -21,8 +23,8 @@ def testingComps():
 
     # Note that running a.verify_component_properties() will still result in the TypeError since
     # the method verifies each of the properties of that object
-    a_out = InitCompInvariant(SystemObj)
-    a_out_1 = InitCompVariant(SystemObj)
+    a_out = InitCompInvariant(sys_obj)
+    a_out_1 = InitCompVariant(sys_obj)
     a_out_2 = "Just a test"
 
     with pytest.raises(KeyError):
@@ -34,8 +36,8 @@ def testingComps():
     a.outputs["result"] = a_out
     a.outputs["result1"] = a_out_1
 
-    a_para = InitCompInvariant(SystemObj)
-    a_para_1 = InitCompVariant(SystemObj)
+    a_para = InitCompInvariant(sys_obj)
+    a_para_1 = InitCompVariant(sys_obj)
 
     a.parameters.update(para=a_out, para1=a_out_1)
 
@@ -45,17 +47,18 @@ def testingComps():
 
     ## Order-invariant component
 
-    b = InitCompInvariant(SystemObj)
+    b = InitCompInvariant(sys_obj)
     assert b.inputs == {}, "Expected result is {}"
     assert b.outputs == {}, "Expected result is {}"
     assert b.parameters == {}, "Expected result is {}"
 
     with pytest.raises(KeyError):
-        b.inputs["incorrect_key"] = 4  # Will result in KeyError because "incorrect_key" does not conform with the generated key format
+        b.inputs[
+            "incorrect_key"] = 4  # Will result in KeyError because "incorrect_key" does not conform with the generated key format
 
-    b_0 = InitCompInvariant(SystemObj)
-    b_1 = InitCompVariant(SystemObj)
-    b_2 = InitCompVariant(SystemObj)
+    b_0 = InitCompInvariant(sys_obj)
+    b_1 = InitCompVariant(sys_obj)
+    b_2 = InitCompVariant(sys_obj)
 
     b.inputs.update(b_0, b_1, b_2, 3.1415, 42)
     b.outputs.update(b_1, 42)
@@ -63,4 +66,3 @@ def testingComps():
     b.outputs["output_1"] = 3.1415  # You can change/add components if the key conforms to the generated key format
 
     print(b.inputs, b.outputs, b.parameters)
-
