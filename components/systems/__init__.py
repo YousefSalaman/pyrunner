@@ -143,10 +143,10 @@ class _NameManager:
 
         comp_obj_sys = comp_obj.sys  # Component's system container
         main_sys = comp_obj_sys.main_sys  # System that contains all components
-        is_a_system = hasattr(comp_obj, "sys_comps")
+        comp_is_a_system = hasattr(comp_obj, "sys_comps")
 
         comp_name = comp_obj.default_name
-        if not (comp_obj_sys is main_sys or is_a_system):
+        if not (comp_obj_sys is main_sys or comp_is_a_system):
             comp_name += "_" + comp_obj_sys.name
         return self._register_component_name(comp_name)
 
