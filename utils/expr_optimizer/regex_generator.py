@@ -43,8 +43,6 @@ _STRICT_FUNC = "[a-zA-Z0-9_]+"  # Strictly detects functions (excludes multiplic
 _NEG_SIGN = r'\-?'  # Negative sign
 _TERM = r"\-?([a-zA-Z0-9_/\-\+\*\.]|\*\*[a-zA-Z0-9/\-\+\*\.]*)*"  # Generic math term
 
-_TERM_PADDED_EXPR = lambda expr_str: r"\(" + _TERM + expr_str + _TERM + r"\)"  # Create a expression with parenthesis padded with terms
-
 
 def generateMatchRegexes(calc_str):
     """
@@ -53,12 +51,18 @@ def generateMatchRegexes(calc_str):
     the expression string.
     """
 
-    max_lvl = _findMaxNestedParenthesisLevel(calc_str)
+    max_lvl = _find_max_nested_parenthesis_level(calc_str)
 
-    return _buildGeneralExprRegexes(max_lvl)
+    return _build_general_expr_regexes(max_lvl)
 
 
-def _findMaxNestedParenthesisLevel(calc_str):
+def _pad_term(expr_str):
+    """Create a expression with parenthesis padded with terms."""
+
+    return r"\(" + _TERM + expr_str + _TERM + r"\)"
+
+
+def _find_max_nested_parenthesis_level(calc_str):
 
     max_lvl = 0  # Current maximum nested parenthesis level
     lvl_cnt = 0  # Counter for current nested parenthesis level
@@ -77,19 +81,19 @@ def _findMaxNestedParenthesisLevel(calc_str):
     return max_lvl
 
 
-def _buildGeneralExprRegexes(max_lvl):
+def _build_general_expr_regexes(max_lvl):
 
     # Initial regex expression
-    base_expr_str = _NEG_SIGN + "(" + _FUNC + r"\("  + _TERM  + r"\)" + "|" + _TERM + ")*"
+    base_expr_str = _NEG_SIGN + "(" + _FUNC + r"\(" + _TERM + r"\)" + "|" + _TERM + ")*"
 
     # Builds most of the regex by using the maximum level as a reference
     lvl_cnt = 0
     while lvl_cnt < max_lvl - 2:
-        base_expr_str = _NEG_SIGN + "(" + _FUNC + _TERM_PADDED_EXPR(base_expr_str) + "|" + base_expr_str + ")*"
+        base_expr_str = _NEG_SIGN + "(" + _FUNC + _pad_term(base_expr_str) + "|" + base_expr_str + ")*"
         lvl_cnt += 1
 
     # Finish building regexes
-    func_expr_regex = re.compile("(?P<gen_func>"+ _STRICT_FUNC + _TERM_PADDED_EXPR(base_expr_str) + ")")
-    mult_expr_regex = re.compile("(?P<gen_mult>" + _UNFUNC + _TERM_PADDED_EXPR(base_expr_str) + "|" + _TERM + ")")
+    func_expr_regex = re.compile("(?P<gen_func>"+ _STRICT_FUNC + _pad_term(base_expr_str) + ")")
+    mult_expr_regex = re.compile("(?P<gen_mult>" + _UNFUNC + _pad_term(base_expr_str) + "|" + _TERM + ")")
 
     return func_expr_regex, mult_expr_regex

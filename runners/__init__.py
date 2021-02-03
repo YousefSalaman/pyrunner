@@ -29,17 +29,17 @@ class BaseRunner(TypeABC):
         self.group_func_lists = group_func_lists  # List containing the functions/process to runs the system.
 
     @classmethod
-    def runSystem(cls, group_key, sys_name, **kwargs):
+    def run_system(cls, group_key, sys_name, **kwargs):
         """Evaluates stored functions and returns relevant values."""
 
         runner = cls._runner_instances[group_key]
-        return runner._runSystemPrivate(group_key, sys_name, kwargs)
+        return runner._run_system_private(group_key, sys_name, kwargs)
 
     @abstractmethod
-    def _runSystemPrivate(self, group_key, sys_name, kwargs):
+    def _run_system_private(self, group_key, sys_name, kwargs):
         pass
 
-    def _extractDataFromSystemVariables(self, sys_name):
+    def _extract_data_from_system_variables(self, sys_name):
 
         if self.group_trans is not None:
             curr_sys_vars = self.group_vars[sys_name]  # Current system shared variables

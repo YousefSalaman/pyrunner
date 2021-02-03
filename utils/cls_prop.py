@@ -32,9 +32,9 @@ class classproperty:
 
     def __init__(self, fget=None, fset=None, fdel=None, doc=None):
 
-        self._fget = self._convertToClassmethod(fget)
-        self._fset = self._convertToClassmethod(fset)
-        self._fdel = self._convertToClassmethod(fdel)
+        self._fget = self._convert_to_classmethod(fget)
+        self._fset = self._convert_to_classmethod(fset)
+        self._fdel = self._convert_to_classmethod(fdel)
         if doc is None and fget is not None:
             doc = fget.__doc__
         self.__doc__ = doc
@@ -59,9 +59,9 @@ class classproperty:
         const_cls_prop.name = name  # Set property name
 
         # Restrict user from changing classproperty's fget, fset, and fdel
-        const_cls_prop.getter = _generateProtocolEntryDenial("getter")
-        const_cls_prop.setter = _generateProtocolEntryDenial("setter")
-        const_cls_prop.deleter = _generateProtocolEntryDenial("deleter")
+        const_cls_prop.getter = _generate_protocal_entry_denial("getter")
+        const_cls_prop.setter = _generate_protocal_entry_denial("setter")
+        const_cls_prop.deleter = _generate_protocal_entry_denial("deleter")
 
         return const_cls_prop
 
@@ -80,14 +80,14 @@ class classproperty:
 
         if self._fset is None:  # Verify if setter was set
             raise AttributeError(f'No setter method has been set for classproperty "{self.name}"')
-        obj, cls = self._getFunctionArguments(obj)
+        obj, cls = self._get_function_arguments(obj)
         return self._fset.__get__(obj, cls)(value)
 
     def __delete__(self, obj):
 
         if self._fdel is None:  # Verify if deleter was set
             raise AttributeError(f'No deleter method has been set for classproperty "{self.name}"')
-        obj, cls = self._getFunctionArguments(obj)
+        obj, cls = self._get_function_arguments(obj)
         self._fdel.__get__(obj, cls)()
 
     def __set_name__(self, obj, name):
@@ -97,23 +97,23 @@ class classproperty:
     def setter(self, fset=None):
         """Descriptor to change the setter on a classproperty"""
 
-        self._fset = self._convertToClassmethod(fset)
+        self._fset = self._convert_to_classmethod(fset)
         return self
 
     def getter(self, fget=None):
         """Descriptor to change the getter on a classproperty"""
 
-        self._fget = self._convertToClassmethod(fget)
+        self._fget = self._convert_to_classmethod(fget)
         return self
 
     def deleter(self, fdel=None):
         """Descriptor to change the deleter on a classproperty"""
 
-        self._fdel = self._convertToClassmethod(fdel)
+        self._fdel = self._convert_to_classmethod(fdel)
         return self
 
     @staticmethod
-    def _convertToClassmethod(func):
+    def _convert_to_classmethod(func):
 
         if func is not None:
             if isinstance(func, staticmethod):
@@ -124,7 +124,7 @@ class classproperty:
         return None
 
     @staticmethod
-    def _getFunctionArguments(obj):
+    def _get_function_arguments(obj):
 
         if isclass(obj):
             return None, obj
@@ -175,7 +175,7 @@ class CPEnabled(metaclass=CPEnabledMeta):
     __slots__ = ()
 
 
-def _generateProtocolEntryDenial(protocol_name):
+def _generate_protocal_entry_denial(protocol_name):
     """
     Function factory that generates functions which can be used to override a
     classproperty's protocol setters (i.e. setter, getter, deleter) and display

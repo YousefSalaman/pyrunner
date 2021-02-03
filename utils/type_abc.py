@@ -26,7 +26,7 @@ from inspect import isabstract
 from Simupynk.utils.cls_prop import CPEnabledMeta, classproperty
 
 
-def _findABCFromBases(bases):
+def _find_ABC_from_bases(bases):
 
     for base_cls in bases:
         if isabstract(base_cls):
@@ -34,16 +34,16 @@ def _findABCFromBases(bases):
     return None
 
 
-def _verifyTypeOverride(cls, abs_cls):
+def _verify_type_override(cls, abs_cls):
 
     for abs_method_name in abs_cls.__abstractmethods__:
         method = cls.__dict__.get(abs_method_name)
         abs_method = abs_cls.__dict__[abs_method_name]
         if method is not None:
-            _checkTypeConsistency(method, abs_method)
+            _check_type_consistency(method, abs_method)
 
 
-def _checkTypeConsistency(method, abs_method):
+def _check_type_consistency(method, abs_method):
 
     method_type = type(method)
     abs_method_type = type(abs_method)
@@ -81,9 +81,9 @@ class TypeABCMeta(ABCMeta):
     def __new__(mcls, name, bases, namespace, **kwargs):
 
         cls = super().__new__(mcls, name, bases, namespace, **kwargs)
-        abs_cls = _findABCFromBases(bases)  # The ABC that contains the relevant abstract methods
+        abs_cls = _find_ABC_from_bases(bases)  # The ABC that contains the relevant abstract methods
         if abs_cls is not None:
-            _verifyTypeOverride(cls, abs_cls)
+            _verify_type_override(cls, abs_cls)
         return cls
 
 

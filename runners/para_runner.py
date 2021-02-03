@@ -17,22 +17,22 @@ class ParallelRunner(BaseRunner):
 
         self.sys_locks = {}  # Dictionary for function locks
         self.sys_ranges = {}  # Dictionary for system ranges
-        self._createSystemStorages()
+        self._create_system_storages()
 
         super().__init__(group_key, group_func_lists, group_vars, group_trans)
 
-    def _runSystemPrivate(self, group_key, sys_name, kwargs):
+    def run_system_private(self, group_key, sys_name, kwargs):
 
         self.act_sys[group_key] = sys_name  # Update the active system
         self.group_vars.update(kwargs)  # Update the necessary variables before running
 
-        self._usePool(sys_name)
-        self._lockAllFunctions(sys_name)
+        self._use_pool(sys_name)
+        self._lock_all_functions(sys_name)
 
-        return self._extractDataFromSystemVariables(sys_name)
+        return self._extract_data_from_system_variables(sys_name)
 
     @classmethod
-    def startProcessConcurrency(cls, runner_pool_cnt=None):
+    def start_process_concurrency(cls, runner_pool_cnt=None):
         # Initialize all the concurrent elements for the class and its instances
 
         cls.global_mgr = mp.Manager()  # Add proxy to manage all runner objects
@@ -42,24 +42,24 @@ class ParallelRunner(BaseRunner):
         for runner in cls._runner_instances.values():
             runner.act_sys = act_sys
             runner.act_sys[runner.group_key] = None  # Initialize runner active system to none
-            runner._passInstanceValuesToManager()
-            runner._createRunnerProcessPool(runner_pool_cnt)
+            runner._pass_instance_values_to_manager()
+            runner._create_runner_process_pool(runner_pool_cnt)
 
     @classmethod
-    def endProcessConcurrency(cls):
+    def end_process_concurrency(cls):
         """Terminate all the runner instance pools"""
 
         for runner in cls._runner_instances.values():
             runner.pool.close()
             runner.pool.join()
 
-    def _createSystemStorages(self):  # TODO: Add initializer for the system variables
+    def _create_system_storages(self):  # TODO: Add initializer for the system variables
 
         for sys_name, func_list in self.group_func_lists.items():
             self.sys_ranges[sys_name] = range(len(func_list))
             self.sys_locks[sys_name] = {sys_func.__name__: True for sys_func in func_list}
 
-    def _passInstanceValuesToManager(self):
+    def _pass_instance_values_to_manager(self):
 
         group_vars = self.global_mgr.dict()  # Manager dictionary for variables
         sys_locks = self.global_mgr.dict()  # Manger dictionary for the current locks
@@ -77,22 +77,22 @@ class ParallelRunner(BaseRunner):
         self.group_vars = group_vars
         self.sys_locks = sys_locks
 
-    def _createRunnerProcessPool(self, runner_pool_cnt):
+    def _create_runner_process_pool(self, runner_pool_cnt):
 
         if runner_pool_cnt is None or self.group_key not in runner_pool_cnt:
             self.pool = mp.Pool()
         else:
             self.pool = mp.Pool(processes=runner_pool_cnt[self.group_key])
 
-    def _usePool(self, sys_name):  # Might put directly in runSystem
+    def _use_pool(self, sys_name):  # Might put directly in runSystem
         """
             This serves as an indirect way for running the different process
         functions. It only accepts the index of the function you want to run.
         """
 
-        self.pool.map(self._runFunctionsConcurrently, self.sys_ranges[sys_name])
+        self.pool.map(self._run_functions_concurrently, self.sys_ranges[sys_name])
 
-    def _runFunctionsConcurrently(self, func_num):
+    def _run_functions_concurrently(self, func_num):
 
         sys_name = self.act_sys[self.group_key]  # Get system name
         sys_func = self.group_func_lists[sys_name][func_num]
@@ -110,7 +110,7 @@ class ParallelRunner(BaseRunner):
 
         self.sys_locks[sys_name][sys_func.__name__] = False  # This unlocks the function
 
-    def _lockAllFunctions(self, sys_name):  # Might put directly in runSystem
+    def _lock_all_functions(self, sys_name):  # Might put directly in runSystem
 
         curr_sys_locks = self.sys_locks[sys_name]
         for func_name in curr_sys_locks.keys():

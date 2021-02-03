@@ -22,38 +22,38 @@ PARAMETER_INFO = (
 
 class InitCompVariant(comps.BaseComponent):
 
-    has_init_cond = comps.generateHasInitCond(True)
+    has_init_cond = comps.generate_has_init_cond(True)
 
-    input_info = comps.generateInputInfo(INPUT_INFO)
+    input_info = comps.generate_input_info(INPUT_INFO)
 
-    output_info = comps.generateOutputInfo(OUTPUT_INFO)
+    output_info = comps.generate_output_info(OUTPUT_INFO)
 
-    parameter_info = comps.generateParameterInfo(PARAMETER_INFO)
+    parameter_info = comps.generate_parameter_info(PARAMETER_INFO)
 
-    default_name = comps.generateDefaultName("test")
+    default_name = comps.generate_default_name("test")
 
-    def generateComponentString(self):
+    def generate_component_string(self):
 
         print("Just a test")
-        super().generateComponentString()
+        super().generate_component_string()
 
 
 class InitCompInvariant(comps.BaseComponent):
 
-    has_init_cond = comps.generateHasInitCond(True)
+    has_init_cond = comps.generate_has_init_cond(True)
 
-    input_info = comps.generateInputInfo(None)
+    input_info = comps.generate_input_info(None)
 
-    output_info = comps.generateOutputInfo(None)
+    output_info = comps.generate_output_info(None)
 
-    parameter_info = comps.generateParameterInfo(None)
+    parameter_info = comps.generate_parameter_info(None)
 
-    default_name = comps.generateDefaultName("test")
+    default_name = comps.generate_default_name("test")
 
-    def generateComponentString(self):
+    def generate_component_string(self):
 
         print("Just a test")
-        super().generateComponentString()
+        super().generate_component_string()
 
 def testingComps():
     ## Order variant component
@@ -67,11 +67,11 @@ def testingComps():
     a.inputs["test1"] = a_in_1
     a.inputs["test2"] = a_in_2
     with pytest.raises(TypeError):
-        a._verifyRequiredComponentProperties()  # Will throw TypeError since one of the required properties was not assigned a component
+        a.verify_component_properties()  # Will throw TypeError since one of the required properties was not assigned a component
 
     a.inputs["test"] = a_in  # Assign last required property for inputs
 
-    # Note that running a._verifyRequiredComponentProperties() will still result in the TypeError since
+    # Note that running a.verify_component_properties() will still result in the TypeError since
     # the method verifies each of the properties of that object
     a_out = InitCompInvariant()
     a_out_1 = InitCompVariant()
@@ -91,7 +91,7 @@ def testingComps():
 
     a.parameters.update(para=a_out, para1=a_out_1)
 
-    a.verifyComponentProperties()  # Nothing will happen since all required properties were filled with a value
+    a.verify_component_properties()  # Nothing will happen since all required properties were filled with a value
 
     print(a.inputs, a.outputs, a.parameters)
 

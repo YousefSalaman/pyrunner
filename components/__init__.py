@@ -17,18 +17,21 @@ class BaseComponent(CPEnabledTypeABC):
     Base class for component objects.
     """
 
-    def __init__(self, name=None, sys_obj=None):  # Inputs might not be needed for all components
+    def __init__(self, sys_obj, name=None):  # Inputs might not be needed for all components
 
-        self.name = name  # Name of the component
+        # Check if component is contained within a system
+        if not hasattr(self, "sys_comps") and sys_obj is None:
+            raise TypeError('Non-system components must reside in within a system component')
+
+        # Initialize attributes for the component
         self.sys = sys_obj  # System that contains object
-        self._input = self._initComponentProperty("input", self.input_info)  # Inputs for the component
-        self._output = self._initComponentProperty("output", self.output_info)  # Outputs for the component
-        self._parameter = self._initComponentProperty("parameter", self.parameter_info)  # Parameters for the component
+        self.name = self._assign_component_name(name)
+        self._input = self._init_component_property("input", self.input_info)
+        self._output = self._init_component_property("output", self.output_info)
+        self._parameter = self._init_component_property("parameter", self.parameter_info)
 
     def __repr__(self):
 
-        if self.name is None:
-            return self.default_name
         return self.name
 
     @property
@@ -49,7 +52,7 @@ class BaseComponent(CPEnabledTypeABC):
 
         return self._parameter
 
-    def verifyComponentProperties(self):
+    def verify_component_properties(self):
         """
         Verify if the component's properties follows the component's set of
         rules. By default, it will verify if the component's required
@@ -64,16 +67,23 @@ class BaseComponent(CPEnabledTypeABC):
 
         for comp_prop, prop_info in zip(comp_props, prop_infos):
             if prop_info is not None:
-                self._verifyRequiredComponentProperties(comp_prop, prop_info)
+                self._verify_required_component_properties(comp_prop, prop_info)
+
+    def _assign_component_name(self, name):
+
+        if self.sys is None:  # This means this component is a main system
+            return name
+        self.name = name  # Temporarily assign name (it can be None in some cases)
+        return self.sys.register_component_name_in_system(self)  # This will output the actual name for the component
 
     @staticmethod
-    def _initComponentProperty(prop_type, prop_info):
+    def _init_component_property(prop_type, prop_info):
 
         if prop_info is None:
             return _ComponentPropertyDict({}, prop_type, prop_info)
         return _ComponentPropertyDict({prop_name: None for prop_name in prop_info[1]}, prop_type, prop_info)
 
-    def _verifyRequiredComponentProperties(self, comp_prop, prop_info):
+    def _verify_required_component_properties(self, comp_prop, prop_info):
 
         req_props = prop_info[0]
         for req_prop in req_props:
@@ -113,7 +123,7 @@ class BaseComponent(CPEnabledTypeABC):
         """
 
     @abstractmethod
-    def generateComponentString(self) -> str:
+    def generate_component_string(self) -> str:
         """
         This generates the functionality of the component within a string.
         """
@@ -131,7 +141,7 @@ class _ComponentPropertyDict(dict):
         components. This is marked by putting "None" in the respective property
         in the component's class.
 
-    [2] Order-variant:
+    [2] Order-dependent:
         These properties have an explicit finite amount of elements in the
         system. This is marked by putting a 2-tuple with elements, which are
         containers, that indicate the required elements and all the elements,
@@ -142,7 +152,7 @@ class _ComponentPropertyDict(dict):
     [1] A component property can only store numeric values or component
         objects.
 
-    [2] Order variant systems can only assign values to the keys determined
+    [2] Order dependent systems can only assign values to the keys determined
         by the class.
 
     [3] Order invariant systems can only assign values to keys that match the
@@ -158,7 +168,7 @@ class _ComponentPropertyDict(dict):
     def __init__(self, new_dict, prop_type, prop_info):
 
         self.prop_type = prop_type  # Property name
-        self._determinePropertyOrderInvariance(prop_info)
+        self._determine_property_order_invariance(prop_info)
 
         super().__init__(new_dict)
 
@@ -196,10 +206,10 @@ class _ComponentPropertyDict(dict):
                 self.count += 1
                 self[self.prop_type + f"_{self.count}"] = value
 
-        for key, value in dict(**kwargs).items():
+        for key, value in kwargs.items():  # TODO: Check if dict is necessary for this
             self[key] = value
 
-    def _determinePropertyOrderInvariance(self, prop_info):
+    def _determine_property_order_invariance(self, prop_info):
 
         if prop_info is None:
             self.count = 0
@@ -218,20 +228,21 @@ def _constant_classproperty_helper_factory(name, types):
 
     doc = BaseComponent.__dict__[name].__doc__
 
-    def generateConstantClassAttributeHelper(value) -> classproperty:
+    def generate_constant_class_attribute_helper(value) -> classproperty:
         """Constant classproperty generator for a given attribute"""
+
         if not isinstance(value, types):
             raise TypeError(f'The value for "{name}" must be one of these types: {types}')
         return classproperty.constant_classproperty(name, value, doc)
 
-    return generateConstantClassAttributeHelper
+    return generate_constant_class_attribute_helper
 
 
 # Attribute factories
 # These functions will generate the corresponding attribute (while ensuring it has the correct type for the attribute)
 
-generateDefaultName = _constant_classproperty_helper_factory("default_name", (str,))
-generateInputInfo = _constant_classproperty_helper_factory("input_info", (tuple, type(None)))
-generateOutputInfo = _constant_classproperty_helper_factory("output_info", (tuple, type(None)))
-generateParameterInfo = _constant_classproperty_helper_factory("parameter_info", (tuple, type(None)))
-generateHasInitCond = _constant_classproperty_helper_factory("has_init_cond", (bool,))
+generate_default_name = _constant_classproperty_helper_factory("default_name", str)
+generate_input_info = _constant_classproperty_helper_factory("input_info", (tuple, type(None)))
+generate_output_info = _constant_classproperty_helper_factory("output_info", (tuple, type(None)))
+generate_parameter_info = _constant_classproperty_helper_factory("parameter_info", (tuple, type(None)))
+generate_has_init_cond = _constant_classproperty_helper_factory("has_init_cond", bool)
