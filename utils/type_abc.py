@@ -39,20 +39,27 @@ def _verify_type_override(cls, abs_cls):
     for abs_method_name in abs_cls.__abstractmethods__:
         method = cls.__dict__.get(abs_method_name)
         abs_method = abs_cls.__dict__[abs_method_name]
-        if method is not None:
-            _check_type_consistency(method, abs_method)
+        if method is None:
+            _raise_standard_abc_error(cls, abs_cls)
+        else:
+            _check_type_consistency(method, abs_method, abs_method_name)
 
 
-def _check_type_consistency(method, abs_method):
+def _raise_standard_abc_error(cls, abs_cls):
+
+    non_overridden_methods = [method for method in abs_cls.__abstractmethods__ if cls.__dict__.get(method) is None]
+    raise TypeError(f"Can't instantiate abstract class {cls.__name__} "
+                    f"with abstract methods {', '.join(non_overridden_methods)}")
+
+
+def _check_type_consistency(method, abs_method, abs_method_name):
 
     method_type = type(method)
     abs_method_type = type(abs_method)
     if all(method_type is not cls for cls in abs_method_type.__mro__ if cls is not object):
-        if hasattr(abs_method, "__func__"):  # Case for method classes
-            func_name = abs_method.__func__.__name__
-            possible_types = [cls.__name__ for cls in abs_method_type.__mro__ if cls is not object]
-            raise TypeError(f'The method "{func_name}" must be one of the following types: {possible_types}.')
-        raise TypeError('One of the overridden methods does not match any of the possible types dictated by the ABC.')
+        possible_types = [cls.__name__ for cls in abs_method_type.__mro__ if cls is not object]
+        raise TypeError(f'The method "{abs_method_name}" must be '
+                        f'one of the following types: {", ".join(possible_types)}.')
 
 
 class abstractclassproperty(classproperty):

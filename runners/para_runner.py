@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 
+import itertools as it
 import multiprocessing as mp
-from Simupynk.runners import BaseRunner
+
+from Simupynk.runners import BaseRunner, BaseBuilder
 
 
-class ParallelRunner(BaseRunner):
+class Runner(BaseRunner):
     """
     This is a concurrent-enabled runner.
     """
@@ -15,6 +17,7 @@ class ParallelRunner(BaseRunner):
         system.
         """
 
+        self.pool = None
         self.sys_locks = {}  # Dictionary for function locks
         self.sys_ranges = {}  # Dictionary for system ranges
         self._create_system_storages()
@@ -127,3 +130,113 @@ class ParallelRunner(BaseRunner):
     def __setstate__(self, unpickle_dict):
 
         self.__dict__.update(unpickle_dict)
+
+
+# Order of Execution builder
+
+class Builder(BaseBuilder):
+
+    def __init__(self):
+
+        self.comp = None  # This is not used for code generation but it's useful in the builder
+        self.front_cnt = 0
+        self.is_meshable = True
+
+        super().__init__()
+
+    def define_sys_info(self, sys_comps):
+        """
+        sys_info legend:
+
+        'inputs' - inputs of comp
+        'comp_loc' - which path the comp is located on (initialized at 0)
+        'call_cnt' - # of times it is used as an input in graph (initialized at 0)
+        """
+
+        super().define_sys_info(sys_comps)
+
+        for value in self.sys_info.values():
+            value.update({'comp_loc': 0, 'call_cnt': 0})
+
+    def determine_component_placement(self, comp):
+        """
+        This determines where a component should be placed using a "path"
+        scheme. With the appropriate structure, these paths can be run in
+        parallel.
+        """
+
+        self.comp = comp
+
+        if len(self.sys_info[comp]['inputs']) == 0:
+            self._build_start_component()
+        else:
+            self._build_non_start_component()
+
+    def _build_start_component(self):
+
+        self._add_component_to_path(self.front_cnt)
+
+        self.front_cnt += 1
+        if self.front_cnt > 1:  # Check for meshability
+            self.is_meshable = False
+
+    def _build_non_start_component(self):
+
+        if len(self.sys_info[self.comp]['inputs']) == 1:
+            self._handle_single_input_component()
+        else:
+            self._handle_multiple_input_component()
+
+    def _handle_single_input_component(self):
+
+        input_comp = self.sys_info[self.comp]['inputs'][0]
+        input_loc = self.sys_info[input_comp]['comp_loc']
+        input_path = self.ordered_comps[input_loc]
+        input_index = input_path.index(input_comp)
+
+        self.sys_info[input_comp]['call_cnt'] += 1  # Update input call count
+        input_call_cnt = self.sys_info[input_comp]['call_cnt']
+
+        # If called only once, the current comp is placed right next to its input
+        if input_call_cnt == 1:  # This calls
+            input_path.insert(input_index + 1, self.comp)
+            self.sys_info[self.comp]['comp_loc'] = input_loc
+
+        # If called twice, the previous comp that calls input_comp is
+        # separated into a new path
+        if input_call_cnt == 2:
+            self.ordered_comps.insert(input_loc + 1, input_path[input_index + 1:])
+            input_path[input_index + 1:] = []
+
+        # For inputs that are called more than once, the current component is
+        # placed into a new path
+        if input_call_cnt > 1:
+            self._add_component_to_path(input_loc + 1)
+
+    def _handle_multiple_input_component(self):
+        """
+        Finds the highest input path location and places current component in
+        a new path after this.
+        """
+
+        comp_inputs = self.sys_info[self.comp]['inputs']
+        max_input_loc = max(self.sys_info[input_comp]['comp_loc'] for input_comp in comp_inputs)
+
+        self._add_component_to_path(max_input_loc + 1)
+
+    def _add_component_to_path(self, comp_loc):
+
+        self._update_other_path_indices(comp_loc)
+
+        self.sys_info[self.comp]['comp_loc'] = comp_loc  # Update component location
+        self.ordered_comps.insert(comp_loc, [self.comp])  # Add component to assigned path
+
+    def _update_other_path_indices(self, start_index):
+        """
+        Update path index for all the components that were mapped from the
+        starting index and forward.
+        """
+
+        paths_to_shift = self.ordered_comps[start_index:]
+        for comp in it.chain.from_iterable(paths_to_shift):
+            self.sys_info[comp]['comp_loc'] += 1

@@ -2,7 +2,10 @@
 Placeholder
 """
 
+import abc
+from Simupynk.runners import *
 from Simupynk.components import BaseComponent
+from Simupynk.runners import available_runners
 from Simupynk.utils.type_abc import abstractclassproperty
 
 
@@ -13,13 +16,15 @@ class BaseSystem(BaseComponent):
 
     _main_systems = []
 
-    def __init__(self, name=None, sys_obj=None):
+    def __init__(self, sys_obj=None, runner_name=None, name=None):
 
         self.sys_comps = []  # Dictionary with components within the system along with their inputs
         if sys_obj is None:
-            self._init_main_system(name)
+            self._init_main_system(name, runner_name)
         else:
-            self.main_sys = sys_obj.main_sys  # Pass reference to main system to current system
+            self._init_inner_system(sys_obj, runner_name)
+
+        self.builder = eval(f'{self.main_sys.runner_name}_runner.Builder()')  # Define a builder object for the system
 
         super().__init__(sys_obj, name)
 
@@ -39,7 +44,7 @@ class BaseSystem(BaseComponent):
         if self is not self.main_sys:
             raise TypeError(f'"{self}" cannot be built since it is not a "main" system')
         self.verify_system_component_properties()
-        # organizeSystem()  # Will actually put something here later
+        self.organize_system()
         self.generate_component_string()
 
     @classmethod
@@ -54,6 +59,22 @@ class BaseSystem(BaseComponent):
 
     def generate_component_string(self):
         pass
+
+    def organize_system(self) -> None:
+        """
+        This method defines the variables to traverse and build the system
+        appropriately. It references the build_system_order of the system's
+        builder.
+        """
+
+        sys_trail = []  # Store components in trail to detect if the system is cyclic (has a feedback loop)
+        self.builder.define_sys_info(self.sys_comps)
+
+        for comp in self.sys_comps:
+            if comp.is_not_mapped:
+                self.builder.build_system_order(comp, sys_trail)  # Build system order
+                if isinstance(comp, BaseSystem):
+                    comp.organize_system()
 
     def verify_system_component_properties(self):
         """
@@ -85,16 +106,36 @@ class BaseSystem(BaseComponent):
             return self.main_sys.name_mgr.generate_component_name(comp)
         return self.main_sys.name_mgr.verify_custom_component_name(comp.name)
 
-    def _init_main_system(self, name):
+    def _init_main_system(self, name, runner_name):
 
         self._main_systems.append(self)  # Register main system in class
 
-        self.main_sys = self
+        self.main_sys = self  # State that you're the main system to your inner system components
         self.name_mgr = _NameManager()  # A "namespace" to register components
+
+        self._verify_runner_type(runner_name)
+        self.runner_name = runner_name
 
         if name is None:
             raise NameError('A "main" system must have a name')
         self.name_mgr.verify_custom_component_name(name)  # Register main system name in its own namespace
+
+    def _init_inner_system(self, sys_obj, runner_name):
+
+        self.main_sys = sys_obj.main_sys  # Pass reference to main system to current system
+        if not (self.main_sys is self or runner_name is None):
+            raise AttributeError("Only the main system can define the runner name")
+
+    @staticmethod
+    def _verify_runner_type(runner_name):
+
+        if runner_name is None:
+            raise NameError('A "main" system must specify a runner name')
+        if not isinstance(runner_name, str):
+            raise TypeError('The argument "runner_name" has to be a string')
+        if runner_name not in available_runners:
+            raise ModuleNotFoundError(f'A runner with the name "{runner_name}" was not found. ' +
+                                      f'The available runner names are {", ".join(available_runners)}.')
 
     @abstractclassproperty
     def default_name(self):

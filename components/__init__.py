@@ -3,9 +3,11 @@ This package contains all the components of the Simupynk system.
 """
 
 import re
-import numpy as np
 from numbers import Number
 from abc import abstractmethod
+
+import numpy as np
+
 from Simupynk.utils.cls_prop import classproperty
 from Simupynk.utils.type_abc import CPEnabledTypeABC, abstractclassproperty
 
@@ -22,6 +24,7 @@ class BaseComponent(CPEnabledTypeABC):
         self._verify_if_component_is_main_system(sys_obj)
 
         self.sys = sys_obj  # System that contains object
+        self.is_not_mapped = True  # Indicates if component has been ordered
         self.name = self._assign_component_name(name)  # Name of the component
         self._input = self._init_component_property("input", self.input_info, (BaseComponent, str))
         self._output = self._init_component_property("output", self.output_info, (BaseComponent, int))
@@ -59,12 +62,12 @@ class BaseComponent(CPEnabledTypeABC):
         for the component that inherits from this class.
         """
 
-        comp_props = [self._input, self._output, self._parameter]
+        prop_names = ["inputs", "outputs", "parameters"]
         prop_infos = [self.input_info, self.output_info, self.parameter_info]
 
-        for comp_prop, prop_info in zip(comp_props, prop_infos):
+        for prop_name, prop_info in zip(prop_names, prop_infos):
             if prop_info is not None:
-                self._verify_required_component_properties(comp_prop, prop_info)
+                self._verify_required_component_values(prop_name, prop_info)
 
     def _assign_component_name(self, name):
 
@@ -77,20 +80,26 @@ class BaseComponent(CPEnabledTypeABC):
     def _init_component_property(prop_name, prop_info, prop_types):
 
         if prop_info is None:
-            return _ComponentPropertyDict({}, prop_name, prop_info, prop_types)
-        return _ComponentPropertyDict({prop_name: None for prop_name in prop_info[1]}, prop_name, prop_info, prop_types)
+            return _ComponentProperty({}, prop_name, prop_info, prop_types)
+        return _ComponentProperty({prop_name: None for prop_name in prop_info[1]}, prop_name, prop_info, prop_types)
 
-    def _verify_required_component_properties(self, comp_prop, prop_info):
+    def _verify_required_component_values(self, prop_name, prop_info):
 
         req_props = prop_info[0]
-        for req_prop in req_props:
-            if comp_prop[req_prop] is None:
-                raise TypeError(f'"{req_prop}" was not overwritten for component the component "{self}"')
+        comp_prop = getattr(self, prop_name)
+        non_assigned_req_props = [req_prop for req_prop in req_props if comp_prop[req_prop] is None]
+
+        if len(non_assigned_req_props) > 0:
+            raise TypeError(f'For component "{self}", the following variables {non_assigned_req_props}'
+                            f' in component property "{prop_name}" were not assigned values."')
 
     def _verify_if_component_is_main_system(self, sys_obj):
 
-        if sys_obj is None and not hasattr(self, "sys_comps"):
-            raise TypeError("Non-system components must reside in a system component")
+        if sys_obj is None:
+            if not hasattr(self, "sys_comps"):
+                raise TypeError("Non-system components must reside in a system component")
+        else:
+            sys_obj.sys_comps.append(self)  # Add component to system
 
     @abstractclassproperty
     def default_name(self):
@@ -131,7 +140,7 @@ class BaseComponent(CPEnabledTypeABC):
         """
 
 
-class _ComponentPropertyDict(dict):
+class _ComponentProperty(dict):
     """
     This class is used to store and map component properties such as the
     inputs, outputs, and parameters (for calculations.)
@@ -167,7 +176,7 @@ class _ComponentPropertyDict(dict):
         access and modify the value or use the update method.
     """
 
-    _allowed_prop_types = {}
+    _allowed_prop_types = {}  # Store the allowed property types, so it doesn't have to be associated with an instance
 
     def __init__(self, new_dict, prop_name, prop_info, prop_types):
 
@@ -184,19 +193,20 @@ class _ComponentPropertyDict(dict):
         # Checks correct value types
         prop_types = self._allowed_prop_types[self.prop_name]
         if not isinstance(value, prop_types):
-            raise TypeError(f'The value "{value}" must be one of these types: {prop_types}')
+            prop_type_names = [prop_type.__name__ for prop_type in prop_types]
+            raise TypeError(f'The value "{value}" must be an instance of one'
+                            f' of these classes: {", ".join(prop_type_names)}')
 
         # This checks/matches if the key was generated (at least try) by this
         # class
         if self.is_order_invariant and not re.match(self.prop_name + "_[0-9]+", key):
-            raise KeyError(
-                "Custom keys cannot be entered for order-invariant systems. Use the update method to register"
-                + " components or numbers.")
+            raise KeyError("Custom keys cannot be entered for order-invariant systems."
+                           " Use the update method to register values.")
 
         # This check if the key is part of the set properties of the component
         if not (self.is_order_invariant or key in self):
             prop_vars = list(self.keys())
-            raise KeyError(f"{key} is not among these variables: {prop_vars}")
+            raise KeyError(f'The variable "{key}" is not among these variables: {", ".join(prop_vars)}')
 
         super().__setitem__(key, value)
 
@@ -235,12 +245,16 @@ def _constant_classproperty_helper_factory(name, types):
     """
 
     doc = BaseComponent.__dict__[name].__doc__
+    try:
+        type_names = [cls_type.__name__ for cls_type in types]
+    except TypeError:
+        type_names = types.__name__  # In case only one class was entered
 
     def generate_constant_class_attribute_helper(value) -> classproperty:
         """Constant classproperty generator for a given attribute"""
 
         if not isinstance(value, types):
-            raise TypeError(f'The value for "{name}" must be one of these types: {types}')
+            raise TypeError(f'The value for "{name}" must be one of these types: {", ".join(type_names)}')
         return classproperty.constant_classproperty(name, value, doc)
 
     return generate_constant_class_attribute_helper
