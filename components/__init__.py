@@ -3,11 +3,11 @@ This package contains all the components of the Simupynk system.
 """
 
 import re
-from numbers import Number
-from abc import abstractmethod
 
 import numpy as np
 
+from numbers import Number
+from abc import abstractmethod
 from Simupynk.utils.cls_prop import classproperty
 from Simupynk.utils.type_abc import CPEnabledTypeABC, abstractclassproperty
 
@@ -33,6 +33,44 @@ class BaseComponent(CPEnabledTypeABC):
     def __repr__(self):
 
         return self.name
+
+    @abstractclassproperty
+    def default_name(self):
+        """
+        Default name for a component type. It's used in the creation of its
+        name if one wasn't given.
+        """
+
+    @abstractclassproperty
+    def has_init_cond(self):
+        """States whether or not a component has initial conditions."""
+
+    @abstractclassproperty
+    def input_info(self):
+        """
+        A 2-tuple (or NoneType) that indicates a component's required inputs
+        and all its available inputs.
+        """
+
+    @abstractclassproperty
+    def output_info(self):
+        """
+        A 2-tuple (or NoneType) that indicates a component's required outputs
+        and all its available outputs.
+        """
+
+    @abstractclassproperty
+    def parameter_info(self):
+        """
+        A 2-tuple (or NoneType) that indicates a component's required
+        parameters and all its available parameters.
+        """
+
+    @abstractmethod
+    def generate_component_string(self) -> str:
+        """
+        This generates the functionality of the component within a string.
+        """
 
     @property
     def inputs(self):  # TODO: Elaborate more on how inputs work
@@ -100,44 +138,6 @@ class BaseComponent(CPEnabledTypeABC):
                 raise TypeError("Non-system components must reside in a system component")
         else:
             sys_obj.sys_comps.append(self)  # Add component to system
-
-    @abstractclassproperty
-    def default_name(self):
-        """
-        Default name for a component type. It's used in the creation of its
-        name if one wasn't given.
-        """
-
-    @abstractclassproperty
-    def has_init_cond(self):
-        """States whether or not a component has initial conditions."""
-
-    @abstractclassproperty
-    def input_info(self):
-        """
-        A 2-tuple (or NoneType) that indicates a component's required inputs
-        and all its available inputs.
-        """
-
-    @abstractclassproperty
-    def output_info(self):
-        """
-        A 2-tuple (or NoneType) that indicates a component's required outputs
-        and all its available outputs.
-        """
-
-    @abstractclassproperty
-    def parameter_info(self):
-        """
-        A 2-tuple (or NoneType) that indicates a component's required
-        parameters and all its available parameters.
-        """
-
-    @abstractmethod
-    def generate_component_string(self) -> str:
-        """
-        This generates the functionality of the component within a string.
-        """
 
 
 class _ComponentProperty(dict):

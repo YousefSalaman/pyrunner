@@ -59,6 +59,13 @@ class BaseBuilder(TypeABC):
         self.sys_info = None
         self.ordered_comps = []
 
+    @abstractmethod
+    def determine_component_placement(self, comp):
+        """
+        Determine where a component should be in its system order of
+        execution based on the criteria established by this method.
+        """
+
     def define_sys_info(self, sys_comps):
         """
         Create a dictionary to hold relevant information of each component of
@@ -142,10 +149,3 @@ class BaseBuilder(TypeABC):
             return sys_loop[loop_comp_index + 1]
         except IndexError:  # If loop_comp is the last element, its input is first comp in sys_loop
             return sys_loop[0]
-
-    @abstractmethod
-    def determine_component_placement(self, comp):
-        """
-        Determine where a component should be in its system order of
-        execution based on the criteria established by this method.
-        """

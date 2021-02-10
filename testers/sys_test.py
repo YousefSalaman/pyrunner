@@ -1,11 +1,11 @@
 import pytest
-from Simupynk.testers.comp_init import InitCompSystem
-from Simupynk.testers.comp_init import InitCompInvariant
-from Simupynk.testers.comp_init import InitCompVariant
+
+from Simupynk.components.systems.main_sys import MainSystem
+from Simupynk.testers.comp_init import InitCompInvariant, InitCompVariant
 
 
 def testing_sys():
-    sys_obj = InitCompSystem("System1")
+    sys_obj = MainSystem("System1", "seq")
 
     a = InitCompVariant(sys_obj)
     assert str(a) == "test_var"

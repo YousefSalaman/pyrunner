@@ -1,13 +1,15 @@
 import pytest
+
 from Simupynk.testers.comp_init import InitCompSystem
 from Simupynk.testers.comp_init import InitCompInvariant
 from Simupynk.testers.comp_init import InitCompVariant
+from Simupynk.components.systems.main_sys import MainSystem
 
 
 def testing_comps():
     ## Order variant component
 
-    sys_obj = InitCompSystem("System1")
+    sys_obj = MainSystem("System1", "seq")
 
     a = InitCompVariant(sys_obj)
     a_in = InitCompInvariant(sys_obj)

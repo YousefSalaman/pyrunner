@@ -1,9 +1,10 @@
 
 import Simupynk.components as comps
-from Simupynk.components.systems import BaseSystem
+from Simupynk.components.systems import BaseInnerSystem
+from Simupynk.components.systems.main_sys import MainSystem
 
 
-class OrderedSystem(BaseSystem):
+class OrderedSystem(BaseInnerSystem):
 
     has_init_cond = comps.generate_has_init_cond(False)
 
@@ -56,8 +57,8 @@ if __name__ == "__main__":
     # err_sys = OrderedSystem(name="err_sys", runner_name="error")
 
     # Main systems for test
-    seq_sys = OrderedSystem(name="seq_sys", runner_name="seq")
-    para_sys = OrderedSystem(name="para_sys", runner_name="para")
+    seq_sys = MainSystem("seq_sys", "seq")
+    para_sys = MainSystem("para_sys", "para")
 
     a = TestCompInitCondFalse(seq_sys, 'a')
     a1 = TestCompInitCondTrue(seq_sys, 'a1')
@@ -135,7 +136,7 @@ if __name__ == "__main__":
 
     para_sys.build_system()
 
-    para_sys = OrderedSystem(name="para_sys", runner_name="para")
+    para_sys = MainSystem("para_sys", "para")
 
     a = TestCompInitCondFalse(para_sys, 'a')
     b = TestCompInitCondFalse(para_sys, 'b')
