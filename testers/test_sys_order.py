@@ -1,10 +1,10 @@
 
 import Simupynk.components as comps
-from Simupynk.components.systems import BaseInnerSystem
-from Simupynk.components.systems.main_sys import MainSystem
+from Simupynk.components.systems import BaseSubsystem
+from Simupynk.components.systems.diagram import BlockDiagram
 
 
-class OrderedSystem(BaseInnerSystem):
+class OrderedSystem(BaseSubsystem):
 
     has_init_cond = comps.generate_has_init_cond(False)
 
@@ -57,8 +57,8 @@ if __name__ == "__main__":
     # err_sys = OrderedSystem(name="err_sys", runner_name="error")
 
     # Main systems for test
-    seq_sys = MainSystem("seq_sys", "seq")
-    para_sys = MainSystem("para_sys", "para")
+    seq_sys = BlockDiagram("seq_sys", "seq")
+    para_sys = BlockDiagram("para_sys", "para")
 
     a = TestCompInitCondFalse(seq_sys, 'a')
     a1 = TestCompInitCondTrue(seq_sys, 'a1')
@@ -96,7 +96,7 @@ if __name__ == "__main__":
     j.inputs.update(i)
     k.inputs.update(j)
 
-    seq_sys.build_system()
+    seq_sys.build_diagram()
 
     a = TestCompInitCondFalse(para_sys, 'a')
     a1 = TestCompInitCondTrue(para_sys, 'a1')
@@ -134,9 +134,9 @@ if __name__ == "__main__":
     j.inputs.update(i)
     k.inputs.update(j)
 
-    para_sys.build_system()
+    para_sys.build_diagram()
 
-    para_sys = MainSystem("para_sys", "para")
+    para_sys = BlockDiagram("para_sys", "para")
 
     a = TestCompInitCondFalse(para_sys, 'a')
     b = TestCompInitCondFalse(para_sys, 'b')
@@ -173,4 +173,4 @@ if __name__ == "__main__":
     p.inputs.update(n)
     q.inputs.update(p)
 
-    para_sys.build_system()
+    para_sys.build_diagram()

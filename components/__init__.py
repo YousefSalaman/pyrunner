@@ -21,7 +21,7 @@ class BaseComponent(CPEnabledTypeABC):
 
     def __init__(self, sys_obj, name=None):  # Inputs might not be needed for all components
 
-        self._verify_if_component_is_main_system(sys_obj)
+        self._verify_if_component_is_diagram(sys_obj)
 
         self.sys = sys_obj  # System that contains object
         self.is_not_mapped = True  # Indicates if component has been ordered
@@ -131,11 +131,11 @@ class BaseComponent(CPEnabledTypeABC):
             raise TypeError(f'For component "{self}", the following variables {non_assigned_req_props}'
                             f' in component property "{prop_name}" were not assigned values."')
 
-    def _verify_if_component_is_main_system(self, sys_obj):
+    def _verify_if_component_is_diagram(self, sys_obj):
 
         if sys_obj is None:
             if not hasattr(self, "sys_comps"):
-                raise TypeError("Non-system components must reside in a system component")
+                raise TypeError("Non-system components must reside in a block diagram or subsystem")
         else:
             sys_obj.sys_comps.append(self)  # Add component to system
 

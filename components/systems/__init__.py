@@ -2,7 +2,7 @@
 Placeholder
 """
 
-__all__ = ["main_sys"]
+__all__ = ["diagram"]
 
 import abc
 from Simupynk.runners import *  # Do not remove
@@ -14,14 +14,14 @@ class BaseSystem(BaseComponent):
     """
     A base class for system component objects.
 
-    The attribute main_sys must be defined in the
+    The attribute diagram must be defined in the
     child classes that inherit from this class before calling this class' init method through super.
     """
 
     def __init__(self, sys_obj=None, name=None):
 
         self.sys_comps = []  # Dictionary with components within the system along with their inputs
-        self.builder = eval(f'{self.main_sys.runner_name}_runner.Builder()')  # Define a builder object for the system
+        self.builder = eval(f'{self.diagram.runner_name}_runner.Builder()')  # Define a builder object for the system
 
         super().__init__(sys_obj, name)
 
@@ -91,20 +91,20 @@ class BaseSystem(BaseComponent):
         """
 
         if comp.name is None:
-            return self.main_sys.name_mgr.generate_component_name(comp)
-        return self.main_sys.name_mgr.verify_custom_component_name(comp.name)
+            return self.diagram.name_mgr.generate_component_name(comp)
+        return self.diagram.name_mgr.verify_custom_component_name(comp.name)
 
 
-class BaseInnerSystem(BaseSystem):
+class BaseSubsystem(BaseSystem):
     """
-    This is the base class for inner systems (systems within other systems)
+    This is the base class for subsystem components (systems within a block diagram.)
     """
 
     def __init__(self, sys_obj, name=None):
 
-        self.main_sys = sys_obj.main_sys  # Pass reference to main system to current system
+        self.diagram = sys_obj.diagram  # Pass reference to diagram to current system
         if not isinstance(sys_obj, BaseSystem):
-            raise TypeError("The parameter sys_obj needs to be a system")
+            raise TypeError("The parameter sys_obj needs to be a block diagram or subsystem")
 
         super().__init__(sys_obj, name)
 

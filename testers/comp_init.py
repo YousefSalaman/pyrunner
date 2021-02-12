@@ -1,5 +1,5 @@
 import Simupynk.components as comps
-from Simupynk.components.systems import BaseInnerSystem
+from Simupynk.components.systems import BaseSubsystem
 
 
 INPUT_INFO = (
@@ -54,7 +54,7 @@ class InitCompInvariant(comps.BaseComponent):
         super().generate_component_string()
 
 
-class InitCompSystem(BaseInnerSystem):
+class InitCompSystem(BaseSubsystem):
 
     has_init_cond = comps.generate_has_init_cond(True)
 

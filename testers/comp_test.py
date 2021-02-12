@@ -1,15 +1,14 @@
 import pytest
 
-from Simupynk.testers.comp_init import InitCompSystem
 from Simupynk.testers.comp_init import InitCompInvariant
 from Simupynk.testers.comp_init import InitCompVariant
-from Simupynk.components.systems.main_sys import MainSystem
+from Simupynk.components.systems.diagram import BlockDiagram
 
 
 def testing_comps():
     ## Order variant component
 
-    sys_obj = MainSystem("System1", "seq")
+    sys_obj = BlockDiagram("System1", "seq")
 
     a = InitCompVariant(sys_obj)
     a_in = InitCompInvariant(sys_obj)

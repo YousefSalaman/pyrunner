@@ -4,11 +4,11 @@ from Simupynk.runners import available_runners
 from Simupynk.components.systems import BaseSystem
 
 
-class MainSystem(BaseSystem):
+class BlockDiagram(BaseSystem):
 
-    _main_systems = []
+    _diagrams = []
 
-    default_name = comps.generate_default_name("main")
+    default_name = comps.generate_default_name("")
 
     has_init_cond = comps.generate_has_init_cond(False)
 
@@ -20,18 +20,17 @@ class MainSystem(BaseSystem):
 
     def __init__(self, name, runner_name):
 
-        self._main_systems.append(self)  # Register main system in class
-
-        self.main_sys = self  # State that you're the main system to your inner system components
+        self.diagram = self  # State that you're the block diagram for your subsystems
         self.name_mgr = _NameManager()  # A "namespace" to register components
         self.runner_name = runner_name
 
+        self._diagrams.append(self)  # Register diagram in class
         self._verify_runner_type(runner_name)
         self.name_mgr.verify_custom_component_name(name)  # Register main system name in its own namespace
 
         super().__init__(name=name)
 
-    def build_system(self):
+    def build_diagram(self):
         """
         This method will do the following:
 
@@ -49,14 +48,14 @@ class MainSystem(BaseSystem):
         self.generate_component_string()
 
     @classmethod
-    def build_systems(cls):
+    def build_diagrams(cls):
         """
         For multiple main systems that share the same system class, you can use
         this method to build all of them.
         """
 
-        for main_sys in cls._main_systems:
-            main_sys.build_system()
+        for diagram in cls._diagrams:
+            diagram.build_diagram()
 
     @staticmethod
     def _verify_runner_type(runner_name):
@@ -69,8 +68,8 @@ class MainSystem(BaseSystem):
             raise TypeError('The argument "runner_name" has to be a string')
 
         if runner_name not in available_runners:
-            raise ModuleNotFoundError(f'A runner with the name "{runner_name}" was not found. ' +
-                                      f'The available runner names are {", ".join(available_runners)}.')
+            raise ModuleNotFoundError(f'A runner with the name "{runner_name}" was not found. '
+                                      f'The available runner names are: {", ".join(available_runners)}.')
 
 
 class _NameManager:
@@ -97,13 +96,12 @@ class _NameManager:
         registered in the system's name manager.
         """
 
-        comp_obj_sys = comp_obj.sys  # Component's system container
-        main_sys = comp_obj_sys.main_sys  # System that contains all components
-        comp_is_a_system = hasattr(comp_obj, "sys_comps")
+        comp_obj_sys = comp_obj.sys  # Component's system container (could be a diagram or subsystem)
+        comp_is_not_in_subsystem = isinstance(comp_obj_sys, BlockDiagram)
 
         comp_name = comp_obj.default_name
-        if not (comp_obj_sys is main_sys or comp_is_a_system):
-            comp_name += "_" + comp_obj_sys.name
+        if not (isinstance(comp_obj, BaseSystem) or comp_is_not_in_subsystem):
+            comp_name = comp_obj_sys.name + " " + comp_name
         return self._register_component_name(comp_name)
 
     def verify_custom_component_name(self, comp_name):
@@ -120,7 +118,7 @@ class _NameManager:
     def _register_component_name(self, comp_name):
 
         if comp_name in self._sys_var_names:  # Update name registry
-            new_comp_name = comp_name + "_" + str(self._sys_var_names[comp_name])
+            new_comp_name = comp_name + " " + str(self._sys_var_names[comp_name])
             self._sys_var_names[comp_name] += 1
             return new_comp_name
 

@@ -24,12 +24,12 @@ class BaseRunner(TypeABC):
 
     def __init__(self, group_key, group_func_lists, group_vars, group_trans=None):
 
-        self._runner_instances[group_key] = self  # Save instance
-
         self.group_key = group_key  # String/key to identify system
         self.group_vars = group_vars  # Dictionary for variables
         self.group_trans = group_trans  # Dictionary for system translators
         self.group_func_lists = group_func_lists  # List containing the functions/process to runs the system.
+
+        self._runner_instances[group_key] = self  # Save instance
 
     @classmethod
     def run_system(cls, group_key, sys_name, **kwargs):

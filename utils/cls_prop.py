@@ -59,9 +59,9 @@ class classproperty:
         const_cls_prop.name = name  # Set property name
 
         # Restrict user from changing classproperty's fget, fset, and fdel
-        const_cls_prop.getter = _generate_protocal_entry_denial("getter")
-        const_cls_prop.setter = _generate_protocal_entry_denial("setter")
-        const_cls_prop.deleter = _generate_protocal_entry_denial("deleter")
+        const_cls_prop.getter = _generate_protocol_entry_denial("getter")
+        const_cls_prop.setter = _generate_protocol_entry_denial("setter")
+        const_cls_prop.deleter = _generate_protocol_entry_denial("deleter")
 
         return const_cls_prop
 
@@ -175,7 +175,7 @@ class CPEnabled(metaclass=CPEnabledMeta):
     __slots__ = ()
 
 
-def _generate_protocal_entry_denial(protocol_name):
+def _generate_protocol_entry_denial(protocol_name):
     """
     Function factory that generates functions which can be used to override a
     classproperty's protocol setters (i.e. setter, getter, deleter) and display
