@@ -1,22 +1,22 @@
 
-import Simupynk.components as comps
+from .base_sys import BaseSystem
 from Simupynk.runners import available_runners
-from Simupynk.components.systems import BaseSystem
+import Simupynk.components.base_comp as base_comp
 
 
 class BlockDiagram(BaseSystem):
 
     _diagrams = []
 
-    default_name = comps.generate_default_name("")
+    default_name = base_comp.generate_default_name("")
 
-    has_init_cond = comps.generate_has_init_cond(False)
+    has_init_cond = base_comp.generate_has_init_cond(False)
 
-    input_info = comps.generate_input_info(None)
+    input_info = base_comp.generate_input_info(None)
 
-    output_info = comps.generate_output_info(None)
+    output_info = base_comp.generate_output_info(None)
 
-    parameter_info = comps.generate_parameter_info(None)
+    parameter_info = base_comp.generate_parameter_info(None)
 
     def __init__(self, name, runner_name):
 
@@ -101,7 +101,7 @@ class _NameManager:
 
         comp_name = comp_obj.default_name
         if not (isinstance(comp_obj, BaseSystem) or comp_is_not_in_subsystem):
-            comp_name = comp_obj_sys.name + " " + comp_name
+            comp_name = comp_obj_sys.name + "_" + comp_name
         return self._register_component_name(comp_name)
 
     def verify_custom_component_name(self, comp_name):
@@ -118,7 +118,7 @@ class _NameManager:
     def _register_component_name(self, comp_name):
 
         if comp_name in self._sys_var_names:  # Update name registry
-            new_comp_name = comp_name + " " + str(self._sys_var_names[comp_name])
+            new_comp_name = comp_name + "_" + str(self._sys_var_names[comp_name])
             self._sys_var_names[comp_name] += 1
             return new_comp_name
 

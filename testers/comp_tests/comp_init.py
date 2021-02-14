@@ -8,8 +8,8 @@ INPUT_INFO = (
 )
 
 OUTPUT_INFO = (
-    {"result", "result1"},  # Required outputs properties
-    {"result", "result1", "result2"}  # All output properties
+    {},  # Required outputs properties
+    {}  # All output properties
 )
 
 PARAMETER_INFO = (
@@ -18,7 +18,7 @@ PARAMETER_INFO = (
 )
 
 
-class InitCompVariant(comps.BaseComponent):
+class InitCompDependent(comps.BaseComponent):
 
     has_init_cond = comps.generate_has_init_cond(True)
 

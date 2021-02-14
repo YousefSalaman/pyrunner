@@ -194,7 +194,7 @@ class Builder(BaseBuilder):
         input_path = self.ordered_comps[input_loc]
         input_index = input_path.index(input_comp)
 
-        self.sys_info[input_comp]['call_cnt'] += 1  # Update input call count
+        self.sys_info[input_comp]['call_cnt'] += 1  # Update input call _key_gen_count
         input_call_cnt = self.sys_info[input_comp]['call_cnt']
 
         # If called only once, the current comp is placed right next to its input
