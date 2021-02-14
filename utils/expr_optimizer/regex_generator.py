@@ -41,7 +41,7 @@ _FUNC = "[a-zA-Z0-9_]*"  # Will detect a function or multiplication
 _UNFUNC = "(?<![a-zA-Z0-9_])"  # Lookbehind regex that prevents any function from being detected
 _STRICT_FUNC = "[a-zA-Z0-9_]+"  # Strictly detects functions (excludes multiplication)
 _NEG_SIGN = r'\-?'  # Negative sign
-_TERM = r"\-?([a-zA-Z0-9_/\-\+\*\.]|\*\*[a-zA-Z0-9/\-\+\*\.]*)*"  # Generic math_op term
+_TERM = r"\-?([a-zA-Z0-9_/\-\+\*\.]|\*\*[a-zA-Z0-9/\-\+\*\.]*)*"  # Generic math term
 
 
 def generateMatchRegexes(calc_str):
@@ -70,9 +70,9 @@ def _find_max_nested_parenthesis_level(calc_str):
     # Verify expression string for its max nested parenthesis level
     for char in calc_str:
 
-        if char == "(":  # Increase the current level _key_gen_count by 1 for each "(" found
+        if char == "(":  # Increase the current level count by 1 for each "(" found
             lvl_cnt += 1
-        elif char == ")":  # Decrease the current level _key_gen_count by 1 for each ")" found
+        elif char == ")":  # Decrease the current level count by 1 for each ")" found
             lvl_cnt -= 1
 
         if max_lvl < lvl_cnt:  # Update max level
