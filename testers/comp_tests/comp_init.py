@@ -20,7 +20,7 @@ PARAMETER_INFO = (
 
 class InitCompDependent(comps.BaseComponent):
 
-    has_init_cond = comps.generate_has_init_cond(True)
+    direct_feedthrough = comps.generate_direct_feedthrough(True)
 
     input_info = comps.generate_input_info(INPUT_INFO)
 
@@ -38,7 +38,7 @@ class InitCompDependent(comps.BaseComponent):
 
 class InitCompInvariant(comps.BaseComponent):
 
-    has_init_cond = comps.generate_has_init_cond(True)
+    direct_feedthrough = comps.generate_direct_feedthrough(True)
 
     input_info = comps.generate_input_info(None)
 
@@ -56,7 +56,7 @@ class InitCompInvariant(comps.BaseComponent):
 
 class InitCompSystem(BaseSubsystem):
 
-    has_init_cond = comps.generate_has_init_cond(True)
+    direct_feedthrough = comps.generate_direct_feedthrough(True)
 
     input_info = comps.generate_input_info(None)
 

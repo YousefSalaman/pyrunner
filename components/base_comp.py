@@ -14,9 +14,16 @@ from Simupynk.utils.cls_prop import classproperty
 from Simupynk.utils.type_abc import CPEnabledTypeABC, abstractclassproperty
 
 
+# Base component classes
+
 class BaseComponent(CPEnabledTypeABC):
     """
-    Base class for component objects.
+    Interface for component objects.
+
+    All of the necessary component behavior is defined in this class.If you
+    want to create a custom component, you only need to inherit and override
+    the abstract methods. You can follow the guide to create your own
+    component.
     """
 
     def __init__(self, sys_obj, name=None):  # Inputs might not be needed for all components
@@ -30,7 +37,8 @@ class BaseComponent(CPEnabledTypeABC):
         self._input = self._init_component_property("input", self.input_info, BaseComponent)
         self._output = self._init_component_property("output", self.output_info, BaseComponent)
         self._parameter = self._init_component_property("parameter", self.parameter_info,
-                                                        (Number, Callable, Collection, np.generic, np.ndarray))
+                                                        (Number, Callable, Collection, np.generic,
+                                                         np.ndarray, type(None)))
 
     def __repr__(self):
 
@@ -44,8 +52,19 @@ class BaseComponent(CPEnabledTypeABC):
         """
 
     @abstractclassproperty
-    def has_init_cond(self):
-        """States whether or not a component has initial conditions."""
+    def direct_feedthrough(self):
+        """
+        This indicates if the component is solely dependent of its input
+        components or not.
+
+        The attribute is used for determining an order of execution for a
+        system. It only comes into question if there is a feedback loop within
+        your system. If the loop is composed of only components are direct
+        feedthrough, then that loop is considered to be an "algebraic loop". In
+        that case, the code will raise an error since solving these is not yet
+        supported. Otherwise, if there is a component that is not this in the
+        loop, then the loop can be resolved.
+        """
 
     @abstractclassproperty
     def input_info(self):
@@ -69,7 +88,7 @@ class BaseComponent(CPEnabledTypeABC):
         """
 
     @abstractmethod
-    def generate_component_string(self) -> str:
+    def generate_component_string(self):
         """
         This generates the functionality of the component within a string.
         """
@@ -91,6 +110,21 @@ class BaseComponent(CPEnabledTypeABC):
         """Parameters used for calculations in the system."""
 
         return self._parameter
+
+    def pass_default_parameters(self):
+        """
+        This method will pass the default parameters stored in the
+        attribute parameter_info (i.e. if it's not None). This will
+        only work if parameter_info[1] is a dictionary. If not, it
+        will skip the passing process.
+        """
+
+        if self.parameter_info is not None and isinstance(self.parameter_info[1], dict):
+            req_parameters = self.parameter_info[0]
+            all_parameters = self.parameter_info[1]
+            for parameter in all_parameters:
+                if parameter not in req_parameters and self.parameters[parameter] is None:
+                    self.parameters[parameter] = all_parameters[parameter]
 
     def verify_component_properties(self):
         """
@@ -142,11 +176,85 @@ class BaseComponent(CPEnabledTypeABC):
             sys_obj.sys_comps.append(self)  # Add component to system
 
 
-# ComponentProperty definitions
+# Useful functions, and variables that can used for components building
+
+def _constant_classproperty_helper_factory(name, types):
+    """
+    Function factory that generates helper functions for creating a constant
+    classproperty for a given class attribute.
+    """
+
+    doc = BaseComponent.__dict__[name].__doc__
+    try:
+        type_names = [cls_type.__name__ for cls_type in types]
+    except TypeError:
+        type_names = types.__name__  # In case only one class was entered
+
+    def generate_constant_class_attribute_helper(value) -> classproperty:
+        """Constant classproperty generator for a given attribute"""
+
+        if not isinstance(value, types):
+            raise TypeError(f'The value for "{name}" must be one of these types: {", ".join(type_names)}')
+        return classproperty.constant_classproperty(name, value, doc)
+
+    return generate_constant_class_attribute_helper
+
+
+# Attribute factories
+# These functions will generate the corresponding attribute (while ensuring it has the correct type for the attribute)
+
+generate_default_name = _constant_classproperty_helper_factory("default_name", str)
+generate_direct_feedthrough = _constant_classproperty_helper_factory("direct_feedthrough", bool)
+generate_input_info = _constant_classproperty_helper_factory("input_info", (tuple, type(None)))
+generate_output_info = _constant_classproperty_helper_factory("output_info", (tuple, type(None)))
+generate_parameter_info = _constant_classproperty_helper_factory("parameter_info", (tuple, type(None)))
+
+
+class BaseNormalComponent(BaseComponent):
+    """
+    Interface for "normal" component objects.
+
+    "Normal" components are components that are not system components, so these
+    cannot store items inside of them. In addition to this, these components
+    have the following restrictions:
+
+    - Their output property cannot be modified. That is, you cannot
+      add items to their output. This is only reserved for system
+      components.
+
+    All of these restrictions are present in this base class, so you do not
+    need to recreate them if you inherit from this class.
+    """
+
+    output_info = generate_output_info(({}, {}))
+
+    @abstractclassproperty
+    def default_name(self):
+        pass
+
+    @abstractclassproperty
+    def direct_feedthrough(self):
+        pass
+
+    @abstractclassproperty
+    def input_info(self):
+        pass
+
+    @abstractclassproperty
+    def parameter_info(self):
+        pass
+
+    @abstractmethod
+    def generate_component_string(self):
+        pass
+
+
+# ComponentProperty definition and helper decorators
 
 def _non_erasable_order_dependent_method(func):
     """
-    Decorator to disable item deletion for order-dependent component properties.
+    Decorator to disable item deletion for order-dependent component
+    properties.
     """
 
     @wraps(func)
@@ -170,9 +278,9 @@ def _detect_invalid_key_entry(func):
         self = args[0]
         try:
             func(*args)
-        except KeyError:
+        except KeyError as error:
             raise KeyError("Item could not be deleted. You either entered an invalid key "
-                           f"or the {self._prop_name}s are empty.")
+                           f"or the {self._prop_name}s are empty.") from error
 
     return method_wrapper
 
@@ -203,9 +311,9 @@ class _ComponentProperty(dict):
     [2] Order-dependent systems can only assign values to the keys determined
         by the class.
 
-    [3] Order-invariant components can only assign values to keys that match the
-        regex "{prop_type}_[0-9]+", where prop_type is input, output, or
-        parameter.
+    [3] Order-invariant components can only assign values to keys that match
+        the regex "{prop_type}_[1-9][0-9]*", where prop_type is input, output,
+        or parameter.
 
     [4] Order-invariant components generate keys by using the add method,
         which means you should use this method to add new property entries. To
@@ -227,37 +335,12 @@ class _ComponentProperty(dict):
 
     def __setitem__(self, key, value):
 
-        # Check if key is a string
-        if not isinstance(key, str):
-            raise TypeError("The key/variable of a component property must be a string.")
-
-        # Checks correct value types
-        prop_types = self._allowed_prop_types[self._prop_name]
-        if not isinstance(value, prop_types):
-            try:
-                prop_type_names = [prop_type.__name__ for prop_type in prop_types]
-            except TypeError:
-                prop_type_names = [prop_types.__name__]
-            raise TypeError(f'The value "{value}" must be an instance of one '
-                            f'of these classes: {", ".join(prop_type_names)}')
-
-        # This checks if the key was generated by this class by verifying
-        # if it matches the generated format and if its property number is
-        # among the generated ones
-        if self.is_order_invariant \
-                and \
-                not (re.match(self._prop_name + "_[1-9][0-9]*", key)  # Check if key has the class' generated key format
-                     and int(key.rsplit('_', maxsplit=1)[
-                                 1]) <= self._key_gen_count):  # Check if property number is among the generated ones
-
-            raise KeyError("Custom keys cannot be entered for order-invariant systems. "
-                           "Use the add method to register values.")
-
-        # This checks if the key is part of the set properties of the component
-        if not (self.is_order_invariant or key in self):
-            if len(self) == 0:
-                raise KeyError(f"No entries are allowed for the component's {self._prop_name}s.")
-            raise KeyError(f'The variable "{key}" is not among these variables: {", ".join(self.keys())}.')
+        self._check_key_type(key)
+        self._check_value_type(value)
+        if self.is_order_invariant:
+            self._check_for_key_generated_format(key)
+        else:
+            self._check_if_key_is_in_defined_variables(key)
 
         super().__setitem__(key, value)
 
@@ -274,39 +357,55 @@ class _ComponentProperty(dict):
         If for some i such that i < n, its respective key-value pair,
         (prop_name i, value i), is deleted, then the following happens:
 
-        Original property:
+        - Original property:
 
-        key_gen_count = n + 1
-        {(prop_name 1, value 1), ..., (prop_name i, value i), ..., (prop_name n, value n)}
+            key_gen_count = n + 1
 
-        1. Delete (prop_name i, value i)
+            {(prop_name 1, value 1),
+             ...,
+             (prop_name i, value i),
+             ...,
+             (prop_name n, value n)}
 
-        key_gen_count = n  <- This is adjusted so the new generated value has the key "prop_name n"
-        {..., (prop_name i-1, value i-1), (prop_name i+1, value i+1), ..., (prop_name n, value n)}
+        - Delete (prop_name i, value i):
 
-        2. Shift value to the left (This is skipped if i = key_gen_count)
+            key_gen_count = n  <- This is adjusted so the new generated value has the key "prop_name n"
 
-        key_gen_count = n
-        {..., (prop_name i-1, value i-1), (prop_name i, value i+1), ..., (prop_name n-1, value n)}
+            {...,
+            (prop_name i-1, value i-1), (prop_name i+1, value i+1),
+            ...,
+            (prop_name n, value n)}
+
+        - Pass entry values to the left (The subsequent steps are skipped if i = key_gen_count):
+
+            key_gen_count = n
+
+            {(prop_name 1, value 1),
+            ...,
+            (prop_name i-1, value i-1), (prop_name i, value i+1),
+            ...,
+            (prop_name n-1, value n), (prop_name n, value n)}
+
+        - Delete the nth entry:
+
+            key_gen_count = n
+
+            {(prop_name 1, value 1),
+            ...,
+            (prop_name i-1, value i-1), (prop_name i, value i+1),
+            ...,
+            (prop_name n-1, value n)}
 
         The resulting dictionary has n-1 items. Notice the key "prop_name i"
         reappears, but it now has the value of the next item entry of the
-        original dictionary. These steps result in a "left shift" of the values.
+        original dictionary. These steps result in a "left shift" of the
+        values.
         """
 
         if re.match(self._prop_name + "_[1-9][0-9]*", key):  # If it matches generated key format
             self._key_gen_count -= 1  # Adjust key generator count for the next generated key
             super().__delitem__(key)
-
-            key_index = int(key.rsplit('_', maxsplit=1)[1])
-            if key_index < self._key_gen_count:  # "Shift" old entries to the left if it wasn't the last entered
-                prop_name = self._prop_name + "_{}"
-                new_prop_entries = {prop_name.format(i): self[prop_name.format(i + 1)] for i in
-                                    range(key_index, self._key_gen_count)}
-
-                self[key] = new_prop_entries[key]  # Re-register the deleted key
-                self.update(new_prop_entries)  # Add the rest of the entries
-                super().__delitem__(prop_name.format(self._key_gen_count))  # Delete last entry
+            self._shift_values_to_the_left(key)
         else:
             raise KeyError(f"{key} does not match the generated key format of this class. "
                            "You can check the available keys with the show_variables method.")
@@ -334,6 +433,17 @@ class _ComponentProperty(dict):
             for key, value in kwargs.items():
                 self[key] = value
 
+    @_non_erasable_order_dependent_method
+    def clear(self):
+        """
+        Remove all items from the component property.
+
+        This only works for order-invariant components.
+        """
+
+        super().clear()
+        self._key_gen_count = 1
+
     def organize_property(self):
         """
         For order invariant systems, this returns an ordered list of values of
@@ -348,28 +458,18 @@ class _ComponentProperty(dict):
         raise AttributeError("Order-dependent component properties do not need to be organized."
                              " Extract the relevant value by using its key/variable.")
 
-    @_non_erasable_order_dependent_method
-    def clear(self):
-        """
-        Remove all items from the component property.
-
-        This only works for order-invariant components.
-        """
-
-        super().clear()
-        self._key_gen_count = 1
-
     @_detect_invalid_key_entry
     def pop(self, key):
+        """
+        Remove the specified entry and return its value.
 
-        try:
+        Note the key will still be there if it wasn't the last one generated.
+        The last key will be deleted and from the chosen key onwards
+        """
 
-            value = self[key]
-            del self[key]
-            return value
-
-        except KeyError:
-            raise KeyError(f'"{key}" was not found and cannot be deleted.')
+        value = self[key]
+        del self[key]
+        return value
 
     @_detect_invalid_key_entry
     @_non_erasable_order_dependent_method
@@ -389,10 +489,11 @@ class _ComponentProperty(dict):
     def update(self, update_dict=None, **kwargs):
         """Update existing component property entries."""
 
+        print(update_dict, kwargs)
         if isinstance(update_dict, dict):
             self._update(update_dict)
         elif not isinstance(update_dict, type(None)):
-            raise TypeError('The argument "update_dict" must be a dictionary.')
+            raise TypeError('The argument "kwargs" must be a dictionary.')
 
         self._update(kwargs)
 
@@ -404,45 +505,62 @@ class _ComponentProperty(dict):
         else:
             self.is_order_invariant = False
 
-    def _update(self, update_dict):
+    @staticmethod
+    def _check_key_type(key):
 
-        if all(key in self for key in update_dict):
-            super().update(update_dict)
+        if not isinstance(key, str):
+            raise TypeError("The key/variable of a component property must be a string.")
+
+    def _check_value_type(self, value):
+
+        prop_types = self._allowed_prop_types[self._prop_name]
+        if not isinstance(value, prop_types):
+            try:
+                prop_type_names = [prop_type.__name__ for prop_type in prop_types]
+            except TypeError:
+                prop_type_names = [prop_types.__name__]
+            raise TypeError(f'The value "{value}" must be an instance of one '
+                            f'of these classes: {", ".join(prop_type_names)}')
+
+    def _check_for_key_generated_format(self, key):
+
+        generated_key_format = self._prop_name + "_[1-9][0-9]*"  # Generated key format for order-invariant property
+        if re.match(generated_key_format, key):
+            key_index = int(key.rsplit('_', maxsplit=1)[1])
+            if key_index > self._key_gen_count:  # Check if extracted key number is among the generated count
+                raise KeyError(f'The key "{key}" belongs to a key that has not been generated.'
+                               "Use the add method to register values or the show_variables "
+                               "method to display the created keys.")
         else:
-            non_registered_keys = [key for key in update_dict if key not in self]
-            raise KeyError(f"The keys {', '.join(str(non_registered_keys))} are "
+            raise KeyError(f'"{key}" does not match the format {self._prop_name}_#, which '
+                           'is the one used to generate for order-invariant properties. '
+                           'Use the method to register values  or the show_variables method '
+                           'to display the created keys.')
+
+    def _check_if_key_is_in_defined_variables(self, key):
+
+        if key not in self:
+            if len(self) == 0:
+                raise KeyError(f"No entries are allowed for the component's {self._prop_name}s.")
+            raise KeyError(f'The variable "{key}" is not among these variables: {", ".join(self.keys())}.')
+
+    def _shift_values_to_the_left(self, key):
+
+        key_index = int(key.rsplit('_', maxsplit=1)[1])
+        if key_index < self._key_gen_count:  # "Shift" old entries to the left if it wasn't the last entered
+            prop_name = self._prop_name + "_{}"
+            new_prop_entries = {prop_name.format(i): self[prop_name.format(i + 1)] for i in
+                                range(key_index, self._key_gen_count)}
+
+            self[key] = new_prop_entries[key]  # Re-register the deleted key
+            self.update(new_prop_entries)  # Add the rest of the entries
+            super().__delitem__(prop_name.format(self._key_gen_count))  # Delete last entry
+
+    def _update(self, kwargs):
+
+        if all(key in self for key in kwargs):
+            super().update(kwargs)
+        else:
+            non_registered_keys = [key for key in kwargs if key not in self]
+            raise KeyError(f"The keys '{', '.join(non_registered_keys)}' are "
                            f"not among the registered keys: {', '.join(self.keys())}.")
-
-
-# Useful functions, and variables that can used for components building
-
-def _constant_classproperty_helper_factory(name, types):
-    """
-    Function factory that generates helper functions for creating a constant
-    classproperty for a given class attribute.
-    """
-
-    doc = BaseComponent.__dict__[name].__doc__
-    try:
-        type_names = [cls_type.__name__ for cls_type in types]
-    except TypeError:
-        type_names = types.__name__  # In case only one class was entered
-
-    def generate_constant_class_attribute_helper(value) -> classproperty:
-        """Constant classproperty generator for a given attribute"""
-
-        if not isinstance(value, types):
-            raise TypeError(f'The value for "{name}" must be one of these types: {", ".join(type_names)}')
-        return classproperty.constant_classproperty(name, value, doc)
-
-    return generate_constant_class_attribute_helper
-
-
-# Attribute factories
-# These functions will generate the corresponding attribute (while ensuring it has the correct type for the attribute)
-
-generate_default_name = _constant_classproperty_helper_factory("default_name", str)
-generate_has_init_cond = _constant_classproperty_helper_factory("has_init_cond", bool)
-generate_input_info = _constant_classproperty_helper_factory("input_info", (tuple, type(None)))
-generate_output_info = _constant_classproperty_helper_factory("output_info", (tuple, type(None)))
-generate_parameter_info = _constant_classproperty_helper_factory("parameter_info", (tuple, type(None)))

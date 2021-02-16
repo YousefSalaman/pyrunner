@@ -10,7 +10,7 @@ class BlockDiagram(BaseSystem):
 
     default_name = base_comp.generate_default_name("")
 
-    has_init_cond = base_comp.generate_has_init_cond(False)
+    direct_feedthrough = base_comp.generate_direct_feedthrough(False)
 
     input_info = base_comp.generate_input_info(None)
 
@@ -34,15 +34,18 @@ class BlockDiagram(BaseSystem):
         """
         This method will do the following:
 
-        [1] Verify the properties for each component in the system follows the
+        - Verify the properties for each component in the system follows the
             criteria established by each component, respectively.
 
-        [2] It will determine in what order the system will execute each
-            component
+        - It will determine in what order the system will execute each
+            component.
 
-        [3] It will generate the code string for the system.
+        - Pass the default parameters to its respective components
+
+        - It will generate the code string for the system.
         """
 
+        self.pass_default_parameters()
         self.verify_system_component_properties()
         self.organize_system()
         self.generate_component_string()

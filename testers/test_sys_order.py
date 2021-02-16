@@ -6,7 +6,7 @@ from Simupynk.components.systems.diagram import BlockDiagram
 
 class OrderedSystem(BaseSubsystem):
 
-    has_init_cond = comps.generate_has_init_cond(False)
+    direct_feedthrough = comps.generate_direct_feedthrough(False)
 
     input_info = comps.generate_input_info(None)
 
@@ -17,9 +17,9 @@ class OrderedSystem(BaseSubsystem):
     default_name = comps.generate_default_name("test_sys")
 
 
-class TestCompInitCondTrue(comps.BaseComponent):
+class TestCompDirect(comps.BaseComponent):
 
-    has_init_cond = comps.generate_has_init_cond(True)
+    direct_feedthrough = comps.generate_direct_feedthrough(False)
 
     input_info = comps.generate_input_info(None)
 
@@ -27,16 +27,16 @@ class TestCompInitCondTrue(comps.BaseComponent):
 
     parameter_info = comps.generate_parameter_info(None)
 
-    default_name = comps.generate_default_name("init_cond_true")
+    default_name = comps.generate_default_name("direct")
 
     def generate_component_string(self):
 
         print("Just a test")
 
 
-class TestCompInitCondFalse(comps.BaseComponent):
+class TestCompNonDirect(comps.BaseComponent):
 
-    has_init_cond = comps.generate_has_init_cond(False)
+    direct_feedthrough = comps.generate_direct_feedthrough(True)
 
     input_info = comps.generate_input_info(None)
 
@@ -44,7 +44,7 @@ class TestCompInitCondFalse(comps.BaseComponent):
 
     parameter_info = comps.generate_parameter_info(None)
 
-    default_name = comps.generate_default_name("init_cond_false")
+    default_name = comps.generate_default_name("indirect")
 
     def generate_component_string(self):
 
@@ -60,24 +60,24 @@ if __name__ == "__main__":
     seq_sys = BlockDiagram("seq_sys", "seq")
     para_sys = BlockDiagram("para_sys", "para")
 
-    a = TestCompInitCondFalse(seq_sys, 'a')
-    a1 = TestCompInitCondTrue(seq_sys, 'a1')
-    a2 = TestCompInitCondFalse(seq_sys, 'a2')
-    b = TestCompInitCondFalse(seq_sys, 'b')
-    b1 = TestCompInitCondFalse(seq_sys, 'b1')
-    b2 = TestCompInitCondFalse(seq_sys, 'b2')
-    b3 = TestCompInitCondFalse(seq_sys, 'b3')
-    c = TestCompInitCondFalse(seq_sys, 'c')
-    d = TestCompInitCondFalse(seq_sys, 'd')
-    e = TestCompInitCondFalse(seq_sys, 'e')
-    f = TestCompInitCondTrue(seq_sys, 'f')
-    f1 = TestCompInitCondTrue(seq_sys, 'f1')
-    f2 = TestCompInitCondFalse(seq_sys, 'f2')
-    g = TestCompInitCondFalse(seq_sys, 'g')
-    h = TestCompInitCondFalse(seq_sys, 'h')
-    i = TestCompInitCondFalse(seq_sys, 'i')
-    j = TestCompInitCondTrue(seq_sys, 'j')
-    k = TestCompInitCondFalse(seq_sys, 'k')
+    a = TestCompNonDirect(seq_sys, 'a')
+    a1 = TestCompDirect(seq_sys, 'a1')
+    a2 = TestCompNonDirect(seq_sys, 'a2')
+    b = TestCompNonDirect(seq_sys, 'b')
+    b1 = TestCompNonDirect(seq_sys, 'b1')
+    b2 = TestCompNonDirect(seq_sys, 'b2')
+    b3 = TestCompNonDirect(seq_sys, 'b3')
+    c = TestCompNonDirect(seq_sys, 'c')
+    d = TestCompNonDirect(seq_sys, 'd')
+    e = TestCompNonDirect(seq_sys, 'e')
+    f = TestCompDirect(seq_sys, 'f')
+    f1 = TestCompDirect(seq_sys, 'f1')
+    f2 = TestCompNonDirect(seq_sys, 'f2')
+    g = TestCompNonDirect(seq_sys, 'g')
+    h = TestCompNonDirect(seq_sys, 'h')
+    i = TestCompNonDirect(seq_sys, 'i')
+    j = TestCompDirect(seq_sys, 'j')
+    k = TestCompNonDirect(seq_sys, 'k')
 
     a1.inputs.add(a)
     a2.inputs.add(a1)
@@ -98,24 +98,24 @@ if __name__ == "__main__":
 
     seq_sys.build_diagram()
 
-    a = TestCompInitCondFalse(para_sys, 'a')
-    a1 = TestCompInitCondTrue(para_sys, 'a1')
-    a2 = TestCompInitCondFalse(para_sys, 'a2')
-    b = TestCompInitCondFalse(para_sys, 'b')
-    b1 = TestCompInitCondFalse(para_sys, 'b1')
-    b2 = TestCompInitCondFalse(para_sys, 'b2')
-    b3 = TestCompInitCondFalse(para_sys, 'b3')
-    c = TestCompInitCondFalse(para_sys, 'c')
-    d = TestCompInitCondFalse(para_sys, 'd')
-    e = TestCompInitCondFalse(para_sys, 'e')
-    f = TestCompInitCondTrue(para_sys, 'f')
-    f1 = TestCompInitCondTrue(para_sys, 'f1')
-    f2 = TestCompInitCondFalse(para_sys, 'f2')
-    g = TestCompInitCondFalse(para_sys, 'g')
-    h = TestCompInitCondFalse(para_sys, 'h')
-    i = TestCompInitCondFalse(para_sys, 'i')
-    j = TestCompInitCondTrue(para_sys, 'j')
-    k = TestCompInitCondFalse(para_sys, 'k')
+    a = TestCompNonDirect(para_sys, 'a')
+    a1 = TestCompDirect(para_sys, 'a1')
+    a2 = TestCompNonDirect(para_sys, 'a2')
+    b = TestCompNonDirect(para_sys, 'b')
+    b1 = TestCompNonDirect(para_sys, 'b1')
+    b2 = TestCompNonDirect(para_sys, 'b2')
+    b3 = TestCompNonDirect(para_sys, 'b3')
+    c = TestCompNonDirect(para_sys, 'c')
+    d = TestCompNonDirect(para_sys, 'd')
+    e = TestCompNonDirect(para_sys, 'e')
+    f = TestCompDirect(para_sys, 'f')
+    f1 = TestCompDirect(para_sys, 'f1')
+    f2 = TestCompNonDirect(para_sys, 'f2')
+    g = TestCompNonDirect(para_sys, 'g')
+    h = TestCompNonDirect(para_sys, 'h')
+    i = TestCompNonDirect(para_sys, 'i')
+    j = TestCompDirect(para_sys, 'j')
+    k = TestCompNonDirect(para_sys, 'k')
 
     a1.inputs.add(a)
     a2.inputs.add(a1)
@@ -138,24 +138,24 @@ if __name__ == "__main__":
 
     para_sys = BlockDiagram("para_sys", "para")
 
-    a = TestCompInitCondFalse(para_sys, 'a')
-    b = TestCompInitCondFalse(para_sys, 'b')
+    a = TestCompNonDirect(para_sys, 'a')
+    b = TestCompNonDirect(para_sys, 'b')
     c = OrderedSystem(para_sys, name='c')
-    d = TestCompInitCondFalse(para_sys, 'd')
-    e = TestCompInitCondFalse(para_sys, 'e')
-    f = TestCompInitCondTrue(para_sys, 'f')
-    g = TestCompInitCondFalse(para_sys, 'g')
-    h = TestCompInitCondFalse(para_sys, 'h')
-    i = TestCompInitCondFalse(para_sys, 'i')
-    j = TestCompInitCondTrue(para_sys, 'j')
-    k = TestCompInitCondFalse(para_sys, 'k')
+    d = TestCompNonDirect(para_sys, 'd')
+    e = TestCompNonDirect(para_sys, 'e')
+    f = TestCompDirect(para_sys, 'f')
+    g = TestCompNonDirect(para_sys, 'g')
+    h = TestCompNonDirect(para_sys, 'h')
+    i = TestCompNonDirect(para_sys, 'i')
+    j = TestCompDirect(para_sys, 'j')
+    k = TestCompNonDirect(para_sys, 'k')
 
-    l = TestCompInitCondFalse(c, 'l')
-    m = TestCompInitCondFalse(c, 'm')
-    n = TestCompInitCondFalse(c, 'n')
-    o = TestCompInitCondFalse(c, 'o')
-    p = TestCompInitCondTrue(c, 'p')
-    q = TestCompInitCondFalse(c, 'q')
+    l = TestCompNonDirect(c)
+    m = TestCompNonDirect(c)
+    n = TestCompNonDirect(c)
+    o = TestCompNonDirect(c)
+    p = TestCompDirect(c)
+    q = TestCompNonDirect(c)
 
     c.inputs.add(a, b)
     d.inputs.add(c, g)

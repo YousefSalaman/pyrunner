@@ -117,17 +117,18 @@ class BaseBuilder(TypeABC):
     def _sever_system_loop(self, comp, sys_trail):
         """
         Split the system loop by removing the input component to a component
-        that has initial conditions, where both components are within the loop.
+        that is non-direct feedthrough, where both components are within the
+        loop.
         """
 
-        init_conds_comp, loop_input_comp = self._get_loop_components(comp, sys_trail)
-        self.sys_info[init_conds_comp]['inputs'].remove(loop_input_comp)
+        non_direct_comp, loop_input_comp = self._get_loop_components(comp, sys_trail)
+        self.sys_info[non_direct_comp]['inputs'].remove(loop_input_comp)
 
         sys_trail.clear()
 
     def _get_loop_components(self, comp, sys_trail):
         """
-        Gets component with initial conditions and its input component in the
+        Gets non-direct feedthrough component and its input component in the
         loop.
         """
 
@@ -136,10 +137,11 @@ class BaseBuilder(TypeABC):
 
         for loop_comp_index, loop_comp in enumerate(sys_loop):
             loop_input_comp = self._get_component_input_in_loop(loop_comp_index, sys_loop)
-            if loop_input_comp.has_init_cond:
+            if not loop_input_comp.direct_feedthrough:
                 return loop_comp, loop_input_comp
 
-        raise Exception("Feedback loops must contain a component with initial conditions.")
+        raise Exception("System cannot process algebraic loops. There needs to be "
+                        "a non-direct feedthrough component in your feedback loop.")
 
     @staticmethod
     def _get_component_input_in_loop(loop_comp_index, sys_loop):

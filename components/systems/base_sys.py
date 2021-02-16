@@ -24,7 +24,7 @@ class BaseSystem(BaseComponent):
         pass
 
     @abstractclassproperty
-    def has_init_cond(self):
+    def direct_feedthrough(self):
         pass
 
     @abstractclassproperty
@@ -38,6 +38,12 @@ class BaseSystem(BaseComponent):
     @abstractclassproperty
     def parameter_info(self):
         pass
+
+    def pass_default_parameters(self):
+
+        super().pass_default_parameters()
+        for comp in self.sys_comps:
+            comp.pass_default_parameters()
 
     def generate_component_string(self):
 
@@ -109,7 +115,7 @@ class BaseSubsystem(BaseSystem):
         pass
 
     @abstractclassproperty
-    def has_init_cond(self):
+    def direct_feedthrough(self):
         pass
 
     @abstractclassproperty
