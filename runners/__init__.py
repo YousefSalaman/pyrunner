@@ -12,7 +12,7 @@ from abc import abstractmethod
 from Simupynk.utils.type_abc import TypeABC
 
 
-available_runners = frozenset(["seq", "para"])  # This is used for verification. Add any runner here
+available_runners = frozenset(["seq", "para"])  # This is used for verification. Sum any runner here
 
 __all__ = [runner + "_runner" for runner in available_runners]
 

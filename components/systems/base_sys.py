@@ -66,6 +66,16 @@ class BaseSystem(BaseComponent):
                 if isinstance(comp, BaseSystem):
                     comp.organize_system()
 
+    def search_component_name(self, name):
+
+        comp_with_name = []  # List of components that contain name in their name
+        for comp in self.sys_comps:
+            if name in comp.name:
+                comp_with_name.append(comp)
+            if isinstance(comp, BaseSystem):
+                comp_with_name.extend(comp.search_component_name(name))  # Get components from subsystems
+        return set(comp_with_name)
+
     def verify_system_component_properties(self):
         """
         This method will go through all the components within the system and
@@ -78,23 +88,32 @@ class BaseSystem(BaseComponent):
             if isinstance(comp, BaseSystem):  # If component is a also system, verify its attributes
                 comp.verify_system_component_properties()
 
-    def register_component_name_in_system(self, comp):
-        """
-        This method will register a components name into the main system's
-        Name Manager (namespace). When registering a name, the system will do
-        one of two things:
+    def _unregister_system_components(self):
 
-        [1] If a name was entered, the system will check if was not entered
-            before. In the case the same name was entered, the system will
-            raise an error indicating this.
+        for comp in self.sys_comps:
+            if isinstance(comp, BaseSystem):
+                comp._unregister_system_components()
+            self.diagram.unregister_component_name_in_diagram(comp)
 
-        [2] If a name was not entered, the name manager will generate a name
-            for the system.
-        """
+    def _remove_component(self, comp):
 
-        if comp.name is None:
-            return self.diagram.name_mgr.generate_component_name(comp)
-        return self.diagram.name_mgr.verify_custom_component_name(comp.name)
+        for sys_comp in self.sys_comps:
+            self._remove_component_from_component_properties(comp, sys_comp)
+            if isinstance(sys_comp, BaseSystem):
+                sys_comp._remove_component(comp)
+
+        if comp in self.sys_comps:
+            self.sys_comps.remove(comp)
+
+    def _remove_component_from_component_properties(self, comp, sys_comp):
+
+        for prop in (sys_comp.inputs, sys_comp.outputs):
+            for key, value in prop.copy().items():
+                if value == comp:
+                    if getattr(self, prop.prop_name + "_info") is None:  # If component property is order-dependent
+                        del prop[key]
+                    else:  # If component property is order-invariant
+                        prop[key] = None
 
 
 class BaseSubsystem(BaseSystem):

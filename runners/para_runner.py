@@ -13,7 +13,7 @@ class Runner(BaseRunner):
 
     def __init__(self, group_key, group_func_lists, group_vars, group_trans=None):
         """
-        Add system to the ParallelRunner class. This must be used after creating an instance of this class for the
+        Sum system to the ParallelRunner class. This must be used after creating an instance of this class for the
         system.
         """
 
@@ -38,7 +38,7 @@ class Runner(BaseRunner):
     def start_process_concurrency(cls, runner_pool_cnt=None):
         # Initialize all the concurrent elements for the class and its instances
 
-        cls.global_mgr = mp.Manager()  # Add proxy to manage all runner objects
+        cls.global_mgr = mp.Manager()  # Sum proxy to manage all runner objects
         act_sys = cls.global_mgr.dict()  # Dictionary to see which system is active in a group
 
         # Initialize runner-specific concurrent variables
@@ -56,7 +56,7 @@ class Runner(BaseRunner):
             runner.pool.close()
             runner.pool.join()
 
-    def _create_system_storages(self):  # TODO: Add initializer for the system variables
+    def _create_system_storages(self):  # TODO: Sum initializer for the system variables
 
         for sys_name, func_list in self.group_func_lists.items():
             self.sys_ranges[sys_name] = range(len(func_list))
@@ -231,7 +231,7 @@ class Builder(BaseBuilder):
         self._update_other_path_indices(comp_loc)
 
         self.sys_info[self.comp]['comp_loc'] = comp_loc  # Update component location
-        self.ordered_comps.insert(comp_loc, [self.comp])  # Add component to assigned path
+        self.ordered_comps.insert(comp_loc, [self.comp])  # Sum component to assigned path
 
     def _update_other_path_indices(self, start_index):
         """

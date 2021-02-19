@@ -34,8 +34,8 @@ class BaseComponent(CPEnabledTypeABC):
         self.is_not_mapped = True  # Indicates if component has been ordered
         self.name = self._assign_component_name(name)  # Name of the component
         self.code_str = {"Set Up": None, "Execution": None}  # Storage for generated strings
-        self._input = self._init_component_property("input", self.input_info, BaseComponent)
-        self._output = self._init_component_property("output", self.output_info, BaseComponent)
+        self._input = self._init_component_property("input", self.input_info, (BaseComponent, type(None)))
+        self._output = self._init_component_property("output", self.output_info, (BaseComponent, type(None)))
         self._parameter = self._init_component_property("parameter", self.parameter_info,
                                                         (Number, Callable, Collection, np.generic,
                                                          np.ndarray, type(None)))
@@ -148,7 +148,7 @@ class BaseComponent(CPEnabledTypeABC):
         if self.sys is None:  # This means this component is a main system
             return name
         self.name = name  # Temporarily assign name (it can be None in some cases)
-        return self.sys.register_component_name_in_system(self)  # This will output the actual name for the component
+        return self.sys.diagram.register_component_name_in_diagram(self)  # Will output the actual name for the component
 
     @staticmethod
     def _init_component_property(prop_name, prop_info, prop_types):
@@ -173,7 +173,7 @@ class BaseComponent(CPEnabledTypeABC):
             if not hasattr(self, "sys_comps"):
                 raise TypeError("Non-system components must reside in a block diagram or subsystem")
         else:
-            sys_obj.sys_comps.append(self)  # Add component to system
+            sys_obj.sys_comps.append(self)  # Sum component to system
 
 
 # Useful functions, and variables that can used for components building
@@ -280,7 +280,7 @@ def _detect_invalid_key_entry(func):
             func(*args)
         except KeyError as error:
             raise KeyError("Item could not be deleted. You either entered an invalid key "
-                           f"or the {self._prop_name}s are empty.") from error
+                           f"or the {self.prop_name}s are empty.") from error
 
     return method_wrapper
 
@@ -292,40 +292,50 @@ class _ComponentProperty(dict):
 
     These properties are classified as follows:
 
-    [1] Order-invariant:
+    - Order-invariant:
         These properties either have one element or a variable amount of
         components. This is marked by putting "None" in the respective property
         in the component's class.
 
-    [2] Order-dependent:
+    - Order-dependent:
         These properties have an explicit finite amount of elements in the
         system. This is marked by putting a 2-tuple with elements, which are
         containers, that indicate the required elements and all the elements,
-        respectively.
+        respectively. That is:
+
+        (
+        {"var_i", ..., "var_i+k"},  <- The required variables (marked by the subscript "i")
+        {"var_1", ..., "var_i", ..., "var_i+k", ..., "var_n"} <- All the variables defined by the property
+        )
 
     It sets the following rules on these properties:
 
-    [1] A component property can only store numeric values or component
-        objects.
+    - A component property can only store numeric values or component
+      objects.
 
-    [2] Order-dependent systems can only assign values to the keys determined
-        by the class.
+    - Order-dependent systems can only assign values to the keys determined
+      by the class. The second element in the property's info tuple.
 
-    [3] Order-invariant components can only assign values to keys that match
-        the regex "{prop_type}_[1-9][0-9]*", where prop_type is input, output,
-        or parameter.
+    - Order-invariant components can only assign values to keys that match
+      the regex "{prop_type}_[1-9][0-9]*", where prop_type is input, output,
+      or parameter.
 
-    [4] Order-invariant components generate keys by using the add method,
-        which means you should use this method to add new property entries. To
-        change the value of the property, you can use the generated key to
-        access and modify the value or use the update method.
+    - Order-invariant components generate keys by using the add method,
+      which means you should use this method to add new property entries. To
+      change the value of the property, you can use the generated key to
+      access and modify the value or use the update method.
+
+    - To set a system to not accept any entries on the property, set the
+      system to be order-dependent with the info tuple ({},{}). This tells
+      the class that you have a finite amount of entries (the amount being 0
+      in this case) and it will reject any
     """
 
     _allowed_prop_types = {}  # Store the allowed property types, so it doesn't have to be associated with an instance
 
     def __init__(self, new_dict, prop_name, prop_info, prop_types):
 
-        self._prop_name = prop_name  # Property name
+        self.prop_name = prop_name  # Property name
         if prop_name not in self._allowed_prop_types:
             self._allowed_prop_types[prop_name] = prop_types
 
@@ -402,7 +412,7 @@ class _ComponentProperty(dict):
         values.
         """
 
-        if re.match(self._prop_name + "_[1-9][0-9]*", key):  # If it matches generated key format
+        if re.match(self.prop_name + "_[1-9][0-9]*", key):  # If it matches generated key format
             self._key_gen_count -= 1  # Adjust key generator count for the next generated key
             super().__delitem__(key)
             self._shift_values_to_the_left(key)
@@ -412,7 +422,7 @@ class _ComponentProperty(dict):
 
     def add(self, *args, **kwargs):
         """
-        Add value(s) to the component property.
+        Sum value(s) to the component property.
 
         For positional arguments (order-invariant components), the key is
         generated by the class.
@@ -427,7 +437,7 @@ class _ComponentProperty(dict):
 
         if self.is_order_invariant:
             for value in args:
-                self[self._prop_name + f"_{self._key_gen_count}"] = value
+                self[self.prop_name + f"_{self._key_gen_count}"] = value
                 self._key_gen_count += 1
         else:
             for key, value in kwargs.items():
@@ -454,7 +464,7 @@ class _ComponentProperty(dict):
         """
 
         if self.is_order_invariant:
-            return [self[self._prop_name + f"_{i}"] for i in range(1, self._key_gen_count)]
+            return [self[self.prop_name + f"_{i}"] for i in range(1, self._key_gen_count)]
         raise AttributeError("Order-dependent component properties do not need to be organized."
                              " Extract the relevant value by using its key/variable.")
 
@@ -476,7 +486,7 @@ class _ComponentProperty(dict):
     def popitem(self):
         """Remove and return last generated key entry."""
 
-        prop_name = self._prop_name + f"_{self._key_gen_count - 1}"
+        prop_name = self.prop_name + f"_{self._key_gen_count - 1}"
         item = (prop_name, self[prop_name])
         del self[prop_name]
         return item
@@ -489,7 +499,6 @@ class _ComponentProperty(dict):
     def update(self, update_dict=None, **kwargs):
         """Update existing component property entries."""
 
-        print(update_dict, kwargs)
         if isinstance(update_dict, dict):
             self._update(update_dict)
         elif not isinstance(update_dict, type(None)):
@@ -513,7 +522,7 @@ class _ComponentProperty(dict):
 
     def _check_value_type(self, value):
 
-        prop_types = self._allowed_prop_types[self._prop_name]
+        prop_types = self._allowed_prop_types[self.prop_name]
         if not isinstance(value, prop_types):
             try:
                 prop_type_names = [prop_type.__name__ for prop_type in prop_types]
@@ -524,7 +533,7 @@ class _ComponentProperty(dict):
 
     def _check_for_key_generated_format(self, key):
 
-        generated_key_format = self._prop_name + "_[1-9][0-9]*"  # Generated key format for order-invariant property
+        generated_key_format = self.prop_name + "_[1-9][0-9]*"  # Generated key format for order-invariant property
         if re.match(generated_key_format, key):
             key_index = int(key.rsplit('_', maxsplit=1)[1])
             if key_index > self._key_gen_count:  # Check if extracted key number is among the generated count
@@ -532,7 +541,7 @@ class _ComponentProperty(dict):
                                "Use the add method to register values or the show_variables "
                                "method to display the created keys.")
         else:
-            raise KeyError(f'"{key}" does not match the format {self._prop_name}_#, which '
+            raise KeyError(f'"{key}" does not match the format {self.prop_name}_#, which '
                            'is the one used to generate for order-invariant properties. '
                            'Use the method to register values  or the show_variables method '
                            'to display the created keys.')
@@ -541,19 +550,19 @@ class _ComponentProperty(dict):
 
         if key not in self:
             if len(self) == 0:
-                raise KeyError(f"No entries are allowed for the component's {self._prop_name}s.")
+                raise KeyError(f"No entries are allowed for the component's {self.prop_name}s.")
             raise KeyError(f'The variable "{key}" is not among these variables: {", ".join(self.keys())}.')
 
     def _shift_values_to_the_left(self, key):
 
         key_index = int(key.rsplit('_', maxsplit=1)[1])
         if key_index < self._key_gen_count:  # "Shift" old entries to the left if it wasn't the last entered
-            prop_name = self._prop_name + "_{}"
+            prop_name = self.prop_name + "_{}"
             new_prop_entries = {prop_name.format(i): self[prop_name.format(i + 1)] for i in
                                 range(key_index, self._key_gen_count)}
 
             self[key] = new_prop_entries[key]  # Re-register the deleted key
-            self.update(new_prop_entries)  # Add the rest of the entries
+            self.update(new_prop_entries)  # Sum the rest of the entries
             super().__delitem__(prop_name.format(self._key_gen_count))  # Delete last entry
 
     def _update(self, kwargs):

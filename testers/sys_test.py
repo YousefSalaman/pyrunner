@@ -1,9 +1,9 @@
-from Simupynk.components.systems.diagram import BlockDiagram
+from Simupynk.components import *
 from Simupynk.testers.comp_tests.comp_init import InitCompInvariant, InitCompDependent
 
 
 def testing_sys():
-    sys_obj = BlockDiagram("System1", "seq")
+    sys_obj = systems.BlockDiagram("System1", "seq")
 
     a = InitCompDependent(sys_obj)
     assert str(a) == "test_var"

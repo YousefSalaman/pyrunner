@@ -5,8 +5,8 @@ of its flexible nature for calculations and system simulations.
 
 ## Components
 
-TODO: Add something here later
+TODO: Sum something here later
 
 ## Runners
 
-TODO: Add something here later
+TODO: Sum something here later
