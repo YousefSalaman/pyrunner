@@ -19,9 +19,8 @@ const_2.parameters.add(value="np.array([1,2,3])")
 
 def test_normal_addition():
 
-    adder = math_op.Sum(MAIN_SYS)
+    adder = math_op.Sum(MAIN_SYS, comp_signs="+-+")
     adder.inputs.add(const, const_1, const_2)
-    adder.parameters['comp_signs'] = "+-+"
 
     MAIN_SYS.build_diagram()  # Build code to generate the strings
 

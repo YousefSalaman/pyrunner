@@ -189,11 +189,9 @@ class Builder(BaseBuilder):
 
     def _handle_single_input_component(self):
 
-        print(self.comp)
         input_comp = self.sys_info[self.comp]['inputs'][0]
         input_loc = self.sys_info[input_comp]['comp_loc']
         input_path = self.ordered_comps[input_loc]
-        print(input_comp, input_path, input_loc, self.sys_info, self.ordered_comps)
         input_index = input_path.index(input_comp)
 
         self.sys_info[input_comp]['call_cnt'] += 1  # Update input call _key_gen_count

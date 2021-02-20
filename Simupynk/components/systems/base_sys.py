@@ -15,12 +15,12 @@ class BaseSystem(BaseComponent):
     child classes that inherit from this class before calling this class' init method through super.
     """
 
-    def __init__(self, sys_obj=None, name=None):
+    def __init__(self, sys_obj=None, name=None, **parameters):
 
         self.sys_comps = []  # Dictionary with components within the system along with their inputs
         self.builder = eval(f'{self.diagram.runner_name}_runner.Builder()')  # Define a builder object for the system
 
-        super().__init__(sys_obj, name)
+        super().__init__(sys_obj, name, **parameters)
 
     @abstractclassproperty
     def default_name(self):
@@ -124,13 +124,13 @@ class BaseSubsystem(BaseSystem):
     This is the base class for subsystem components (systems within a block diagram.)
     """
 
-    def __init__(self, sys_obj, name=None):
+    def __init__(self, sys_obj, name=None, **parameters):
 
         self.diagram = sys_obj.diagram  # Pass reference to diagram to current system
         if not isinstance(sys_obj, BaseSystem):
             raise TypeError("The parameter sys_obj needs to be a block diagram or subsystem")
 
-        super().__init__(sys_obj, name)
+        super().__init__(sys_obj, name, **parameters)
 
     @abstractclassproperty
     def default_name(self):
