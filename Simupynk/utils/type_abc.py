@@ -11,9 +11,7 @@ this functionality work correctly.
 
 The ABCMeta metaclass was used to build the metaclass TypeABCMeta to detect
 type consistency at class creation, so it gurantees the user overrides the
-interface's method with the correct type. The new metaclass was mixed in with the classproperty metaclass,
-CPEnabledMeta, to fuse both features together in case someone wants to use both
-at the same time.
+interface's method with the correct type.
 
 The classes on this module are based on the following source:
 
@@ -23,7 +21,6 @@ The classes on this module are based on the following source:
 
 from abc import ABCMeta
 from inspect import isabstract
-from Simupynk.Simupynk.utils.cls_prop import CPEnabledMeta, classproperty
 
 
 def _find_ABC_from_bases(bases):
@@ -62,21 +59,6 @@ def _check_type_consistency(method, abs_method, abs_method_name):
                         f'one of the following types: {", ".join(possible_types)}.')
 
 
-class abstractclassproperty(classproperty):
-    """
-    A decorator indicating abstract classproperties.
-
-    It's a direct copy of the depracated "abstractproperty" class from the abc
-    module. This has to be implemented to make the classproperty class work for
-    ABCs. In other words, do not chain classproperty and abstract property
-    since that won't yield the desired result.
-
-    For usage of this class, look at the test scripts for this class.
-    """
-
-    __isabstractmethod__ = True
-
-
 class TypeABCMeta(ABCMeta):
     """
     A metaclass to verify ABCs and their direct child classes have the same
@@ -99,22 +81,6 @@ class TypeABC(metaclass=TypeABCMeta):
     A helper class for the TypeABCMeta metaclass. It enables ABCs that verify
     if its child classes have overridden the abstractmethods with methods that
     have the correct type just by inheriting from this class.
-    """
-
-    __slots__ = ()
-
-
-class CPEnabledTypeABCMeta(CPEnabledMeta, TypeABCMeta):
-    """
-    A metaclass that mixes the functionality of using classproperties and type
-    checking for ABCs.
-    """
-
-
-class CPEnabledTypeABC(metaclass=CPEnabledTypeABCMeta):
-    """
-    A helper class for CPEnabledTypeABCMeta that enables using classproperties
-    and type checking for ABCs just by inhereting from this class directly.
     """
 
     __slots__ = ()

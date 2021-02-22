@@ -15,6 +15,7 @@ The classes in this module are based on the following sources:
 """
 
 from inspect import isclass
+from abc import abstractmethod
 
 
 class classproperty:
@@ -173,6 +174,21 @@ class CPEnabled(metaclass=CPEnabledMeta):
     """
 
     __slots__ = ()
+
+
+class abstractclassproperty(classproperty):
+    """
+    A decorator indicating abstract classproperties.
+
+    It's a direct copy of the depracated "abstractproperty" class from the abc
+    module. This has to be implemented to make the classproperty class work for
+    ABCs. In other words, do not chain classproperty and abstract property
+    since that won't yield the desired result.
+
+    For usage of this class, look at the test scripts for this class.
+    """
+
+    __isabstractmethod__ = True
 
 
 def _generate_protocol_entry_denial(protocol_name):

@@ -105,6 +105,27 @@ class Sum(BaseNormalComponent):
       length and it can be of the following to represent this "+-+", ["+","-","+"],
       or ("+","-","+").
 
+    Parameters
+    ----------
+
+    - name : str
+        Name of the component. The default is None and this will generate a name
+        for the component since it was not given one.
+
+    - comp_signs : Sequence
+        Sequence of characters specifying the sign of a number. This is a required
+        parameter.
+
+    - dimension : int
+        Positiver integer that specifies over what dimension to sum over. This is only
+        relevant if the component has one input. The default is None and this will sum
+        over all of the input component's elements.
+
+    - dtype : str
+        A string specifying what numpy dtype to use to perform the sum. This is only
+        relevant if the component has one input. The default is None and this will
+        just use the dtype of the input component.
+
     Inputs
     ------
 
@@ -116,23 +137,6 @@ class Sum(BaseNormalComponent):
     - The sum of the inputs if there is more than input. Otherwise, it will be
       the sum of the elements in a specified dimension or all the elements of
       the given input.
-
-    Parameters
-    ----------
-
-    - comp_signs : TYPE, Sequence
-      Sequence of characters specifying the sign of a number. This is a required
-      parameter.
-
-    - dimension : TYPE, int
-      Positiver integer that specifies over what dimension to sum over. This is only
-      relevant if the component has one input. The default is None and this will sum
-      over all of the input component's elements.
-
-    - dtype : TYPE, str
-      A string specifying what numpy dtype to use to perform the sum. This is only
-      relevant if the component has one input. The default is None and this will
-      just use the dtype of the input component.
     """
 
     default_name = generate_default_name("add")

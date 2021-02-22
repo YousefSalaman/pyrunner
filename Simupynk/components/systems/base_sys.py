@@ -4,7 +4,7 @@ __all__ = ["BaseSystem",
 
 from ...runners import *  # Do not remove
 from ..base_comp import BaseComponent
-from ...utils.type_abc import abstractclassproperty
+from ...utils.cls_prop import abstractclassproperty
 
 
 class BaseSystem(BaseComponent):

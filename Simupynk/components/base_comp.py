@@ -19,8 +19,8 @@ from collections.abc import Callable, Collection
 
 import numpy as np
 
-from ..utils.cls_prop import classproperty
-from ..utils.type_abc import CPEnabledTypeABC, abstractclassproperty
+from ..utils.mixins import CPEnabledTypeABC
+from ..utils.cls_prop import classproperty, abstractclassproperty
 
 
 # Base component classes
