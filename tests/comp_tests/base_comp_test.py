@@ -25,7 +25,7 @@ def testing_comps():
     a.inputs["test2"] = a_in_2
 
     with pytest.raises(TypeError):
-        a.verify_component_properties()  # Will throw TypeError since one of the required inputs are still not assigned
+        a.verify_properties()  # Will throw TypeError since one of the required inputs are still not assigned
 
     with pytest.raises(KeyError):
         a.inputs["test4"] = a_in_1  # Will result in KeyError because "test4" is not a key in inputs
@@ -37,7 +37,7 @@ def testing_comps():
 
     a.inputs.add(a_in)  # Wont affect anything
 
-    # Note that running a.verify_component_properties() will still result in the TypeError since
+    # Note that running a.verify_properties() will still result in the TypeError since
     # the method verifies each of the properties of that object
 
     with pytest.raises(KeyError):
@@ -47,11 +47,11 @@ def testing_comps():
     a_para_1 = 42
 
     with pytest.raises(TypeError):
-        a.verify_component_properties()  # Will throw TypeError since one of the required outputs are still not assigned
+        a.verify_properties()  # Will throw TypeError since one of the required outputs are still not assigned
 
     a.parameters.update(para=a_para, para1=a_para_1)
 
-    a.verify_component_properties()  # Nothing will happen since all required properties were filled with a value
+    a.verify_properties()  # Nothing will happen since all required properties were filled with a value
 
     # All of the commented lines below will result in an AttributeError since they are attempting to delete an item of
     # an order-dependent property (inputs)

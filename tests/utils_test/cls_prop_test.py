@@ -55,10 +55,10 @@ class FooMeta(metaclass=CPEnabledMeta):  # testing CPEnabledMeta
 
 def test_getter():
     object = Foo()
-    assert object.bar == 1, "The value of the func should be 1."
+    assert object.bar == 1, "The value of the cls should be 1."
 
     object = FooMeta()
-    assert object.bar == 1, "The value of the func should be 1."
+    assert object.bar == 1, "The value of the cls should be 1."
 
 def test_setter():
     object = Foo()

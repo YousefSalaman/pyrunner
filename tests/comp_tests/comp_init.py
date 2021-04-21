@@ -9,7 +9,7 @@ INPUT_INFO = (
 
 OUTPUT_INFO = (
     {},  # Required outputs properties
-    {}  # All output properties
+    {}  # All run properties
 )
 
 PARAMETER_INFO = (

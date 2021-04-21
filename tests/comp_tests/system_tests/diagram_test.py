@@ -46,7 +46,7 @@ def _test_block_diagram_clear_diagram():
     print(adder.inputs)  # Should be {'input_1': const, 'input_2': const_1}
 
     # This will remove every component from the list in the BlockDiagram object and it will remove each component from
-    # any input or output that references it
+    # any input or run that references it
 
     print(MAIN_SYS_1.sys_comps)  # Should be this [const, const_1, add]
     print(MAIN_SYS_1._name_mgr._sys_var_names)  # Should be this {'main_sys': 1, 'const': 2, 'add': 1}
@@ -68,7 +68,7 @@ def _test_block_diagram_remove_component():
     print(adder.inputs)  # Should be {'input_1': const, 'input_2': const_1}
 
     # This will remove the specified component from the list in the BlockDiagram object and it will remove the component
-    # from any input or output that references it
+    # from any input or run that references it
 
     print(MAIN_SYS_1.sys_comps)  # Should be this [const, const_1, add]
     print(MAIN_SYS_1._name_mgr._sys_var_names)  # Should be this {'main_sys': 1, 'const': 2, 'add': 1}
