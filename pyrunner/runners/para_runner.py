@@ -158,7 +158,7 @@ class Builder(BaseBuilder):
         for value in self.sys_info.values():
             value.update({'comp_loc': 0, 'call_cnt': 0})
 
-    def determine_component_placement(self, comp):
+    def map_component(self, comp):
         """
         This determines where a component should be placed using a "path"
         scheme. With the appropriate structure, these paths can be run in

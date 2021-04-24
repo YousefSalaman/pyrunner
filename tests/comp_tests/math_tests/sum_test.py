@@ -22,7 +22,7 @@ def test_normal_addition():
     adder = math_op.Sum(MAIN_SYS, comp_signs="+-+")
     adder.inputs.add(const, const_1, const_2)
 
-    MAIN_SYS.build_diagram()  # Build code to generate the strings
+    MAIN_SYS.build()  # Build code to generate the strings
 
     print(adder.code_str["Execution"])  # Should be "add = const-const_1+const_2"
 
@@ -52,7 +52,7 @@ def test_dimension_addition():
     adder_4.inputs.add(const)
     adder_4.parameters.add(comp_signs="+", dimension=1, dtype="float64")
 
-    MAIN_SYS.build_diagram()  # Build diagram to generate the strings
+    MAIN_SYS.build()  # Build diagram to generate the strings
 
     print(adder_1.code_str['Execution'])  # Should be "add = np.sum(const)"
     print(adder_2.code_str['Execution'])  # Should be "add_1 = np.sum(const,axis=0)"
@@ -71,31 +71,31 @@ def test_addition_errors():
 
     # Will raise a TypeError when built since comp_signs needs to be a sequence
     adder_err.parameters.add(comp_signs=2)
-    MAIN_SYS.build_diagram()
+    MAIN_SYS.build()
 
     # Will raise an AttributeError when built since len(inputs) =/= len(comp_signs)
     adder_err.parameters.update(comp_signs=[])
-    MAIN_SYS.build_diagram()
+    MAIN_SYS.build()
 
     # Will raise a TypeError when built since all the elements in comp_signs must be either '+' or '-'
     adder_err.parameters.update(comp_signs=[2])
-    MAIN_SYS.build_diagram()
+    MAIN_SYS.build()
 
     adder_err.parameters.update(comp_signs='+')  # Fixes the errors above
 
     # Will raise a TypeError when built since the dimension parameter must be a non-negative integer (or None)
     adder_err.parameters.add(dimension="k")
-    MAIN_SYS.build_diagram()
+    MAIN_SYS.build()
 
     adder_err.parameters.add(dimension=None)  # Fixes the error above
 
     # Will raise a TypeError when built since dtype must be a string or None
     adder_err.parameters.add(dtype=3)
-    MAIN_SYS.build_diagram()
+    MAIN_SYS.build()
 
     adder_err.parameters.update(dtype="int32")  # Fixes the error above
 
     # Will raise an AttributeError when built since no input is present in the component
     adder_err.parameters.update(comp_signs=[])  # Update comp_signs parameter with empty list, so len(comp_signs) = 0
     del adder_err.inputs["input_1"]  # Delete the input const to produce the error
-    MAIN_SYS.build_diagram()
+    MAIN_SYS.build()

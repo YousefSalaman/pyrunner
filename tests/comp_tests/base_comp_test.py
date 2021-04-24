@@ -59,7 +59,7 @@ def testing_comps():
     # del a.inputs['test1']
     # a.inputs.pop('test')
     # a.inputs.popitem()
-    # a.inputs.clear()
+    # a.inputs.clear_diagram()
 
     print(a.inputs, a.outputs, a.parameters)
 

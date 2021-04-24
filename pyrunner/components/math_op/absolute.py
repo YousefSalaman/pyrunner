@@ -19,6 +19,6 @@ class Abs(BaseNormalComponent):
 
     parameter_info = generate_parameter_info(_PARAMETER_INFO)
 
-    def generate_component_string(self):
+    def generate_code_string(self):
 
         self.code_str['Execution'] = f'{self.name} = np.abs({self.inputs["input"].name})'

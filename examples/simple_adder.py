@@ -45,7 +45,7 @@ if __name__ == "__main__":
     adder_2.inputs.add(const_2)
 
     main_sys.outputs.add(adder)  # Say the "adder" component is the run
-    main_sys.build_diagram()
+    main_sys.build()
     generator_str = generate_final_code_string(main_sys)
 
     print(generator_str)

@@ -33,7 +33,7 @@ class InitCompDependent(comps.BaseComponent):
     def generate_component_string(self):
 
         print("Just a test")
-        super().generate_component_string()
+        super().generate_code_string()
 
 
 class InitCompInvariant(comps.BaseComponent):
@@ -51,7 +51,7 @@ class InitCompInvariant(comps.BaseComponent):
     def generate_component_string(self):
 
         print("Just a test")
-        super().generate_component_string()
+        super().generate_code_string()
 
 
 class InitCompSystem(BaseSubsystem):
@@ -69,4 +69,4 @@ class InitCompSystem(BaseSubsystem):
     def generate_component_string(self):
 
         print("Just a test")
-        super().generate_component_string()
+        super().generate_code_string()

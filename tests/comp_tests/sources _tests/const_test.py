@@ -9,9 +9,9 @@ if __name__ == "__main__":
     # const_1.inputs.add(test=const_2)  # This will produce a KeyError since no inputs can be added
     # const_1.outputs.add(test=const_2)  # This will produce a KeyError since no outputs can be added
 
-    # main_sys.build_diagram()  # This will result in a TypeError since "value" in parameters was not assigned a value
+    # main_sys.build()  # This will result in a TypeError since "value" in parameters was not assigned a value
 
     const_1.parameters.add(value=1)
     const_2.parameters.add(value=3.1415)
 
-    main_sys.build_diagram()
+    main_sys.build()

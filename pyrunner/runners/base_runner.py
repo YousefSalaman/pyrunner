@@ -49,10 +49,11 @@ class BaseBuilder(TypeABC):
     def __init__(self):
 
         self.sys_info = None
+        self._sys_trail = []   # Store components in trail to detect if the system is cyclic (has a feedback loop)
         self.ordered_comps = []
 
     @abstractmethod
-    def determine_component_placement(self, comp):
+    def map_component(self, comp):
         """
         Determine where a component should be in its system order of
         execution based on the criteria established by this method.
@@ -89,43 +90,43 @@ class BaseBuilder(TypeABC):
 
         self.sys_info = {comp: {'inputs': list(set(comp.inputs.values()))} for comp in sys_comps}
 
-    def build_system_order(self, comp, sys_trail):
+    def build_system_order(self, comp):
 
-        sys_trail.append(comp)  # Record component in the trail
+        self._sys_trail.append(comp)  # Record component in the trail
 
         comp_inputs = self.sys_info[comp]['inputs']
         for input_comp in comp_inputs:
-            if input_comp in sys_trail:  # There's a feedback loop in your system (system is cyclic)
-                self._sever_system_loop(input_comp, sys_trail)
+            if input_comp in self._sys_trail:  # There's a feedback loop in your system (system is cyclic)
+                self._sever_system_loop(input_comp)
             if input_comp.is_not_mapped:
-                self.build_system_order(input_comp, sys_trail)
+                self.build_system_order(input_comp)
 
         if comp.is_not_mapped:
-            self.determine_component_placement(comp)
+            self.map_component(comp)
             comp.is_not_mapped = False
-            if comp in sys_trail:  # Remove component from trail after finishing
-                sys_trail.remove(comp)
+            if comp in self._sys_trail:  # Remove component from trail after finishing
+                self._sys_trail.remove(comp)
 
-    def _sever_system_loop(self, comp, sys_trail):
+    def _sever_system_loop(self, comp):
         """
         Split the system loop by removing the input component to a component
         that is non-direct feedthrough, where both components are within the
         loop.
         """
 
-        non_direct_comp, loop_input_comp = self._get_loop_components(comp, sys_trail)
+        non_direct_comp, loop_input_comp = self._get_loop_components(comp)
         self.sys_info[non_direct_comp]['inputs'].remove(loop_input_comp)
 
-        sys_trail.clear()
+        self._sys_trail.clear()
 
-    def _get_loop_components(self, comp, sys_trail):
+    def _get_loop_components(self, comp):
         """
         Gets non-direct feedthrough component and its input component in the
         loop.
         """
 
-        input_index = sys_trail.index(comp)
-        sys_loop = sys_trail[input_index:]  # Gets the loop portion in the recorded trail
+        input_index = self._sys_trail.index(comp)
+        sys_loop = self._sys_trail[input_index:]  # Gets the loop portion in the recorded trail
 
         for loop_comp_index, loop_comp in enumerate(sys_loop):
             loop_input_comp = self._get_component_input_in_loop(loop_comp_index, sys_loop)

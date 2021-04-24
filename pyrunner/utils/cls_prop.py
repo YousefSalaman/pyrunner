@@ -22,10 +22,12 @@ class classproperty:
 
     This was done since Python versions earlier than 3.9 can't chain "property"
     and "classmethod" objects to achieve the same effect as what this class
-    does. Noting this fget, fset, and fdel cannot be staticmethods. They need
-    to be either a normal or a class method. Furthermore, when either of these
-    is set they are turned into classmethods and these are not directly callable,
-    so to actually access them the __get__ method is used to pass the values to
+    does.
+
+    Note that fget, fset, and fdel cannot be staticmethods. They need to be
+    either a normal or a class method. Furthermore, when either of these is set
+    they are turned into classmethods and these are not directly callable, so
+    to actually access them the __get__ method is used to pass the values to
     the method stored in the classmethod object.
     """
 
@@ -102,19 +104,19 @@ class classproperty:
         self.name = name
 
     def setter(self, fset=None):
-        """Descriptor to change the setter on a classproperty"""
+        """Accesor decorator to change the setter on a classproperty"""
 
         self._fset = self._convert_to_classmethod(fset)
         return self
 
     def getter(self, fget=None):
-        """Descriptor to change the getter on a classproperty"""
+        """Accesor decorator to change the getter on a classproperty"""
 
         self._fget = self._convert_to_classmethod(fget)
         return self
 
     def deleter(self, fdel=None):
-        """Descriptor to change the deleter on a classproperty"""
+        """Accesor decorator to change the deleter on a classproperty"""
 
         self._fdel = self._convert_to_classmethod(fdel)
         return self

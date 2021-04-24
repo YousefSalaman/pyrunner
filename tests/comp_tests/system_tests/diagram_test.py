@@ -1,4 +1,4 @@
-import Simupynk.Simupynk.components as comps
+import pyrunner.pyrunner.components as comps
 
 
 class TestSystem(comps.systems.BaseSubsystem):
@@ -12,6 +12,9 @@ class TestSystem(comps.systems.BaseSubsystem):
     output_info = comps.generate_output_info(None)
 
     parameter_info = comps.generate_parameter_info(None)
+
+    def _create_components(self):
+        pass
 
 
 # BlockDiagram test objects
@@ -48,11 +51,11 @@ def _test_block_diagram_clear_diagram():
     # This will remove every component from the list in the BlockDiagram object and it will remove each component from
     # any input or run that references it
 
-    print(MAIN_SYS_1.sys_comps)  # Should be this [const, const_1, add]
-    print(MAIN_SYS_1._name_mgr._sys_var_names)  # Should be this {'main_sys': 1, 'const': 2, 'add': 1}
+    print(MAIN_SYS_1.comps)  # Should be this [const, const_1, add]
+    print(MAIN_SYS_1._name_mgr._registry)  # Should be this {'main_sys': 1, 'const': 2, 'add': 1}
     MAIN_SYS_1.clear_diagram()
-    print(MAIN_SYS_1.sys_comps)  # Should be []
-    print(MAIN_SYS_1._name_mgr._sys_var_names)  # Should be this {'main_sys': 1}
+    print(MAIN_SYS_1.comps)  # Should be []
+    print(MAIN_SYS_1._name_mgr._registry)  # Should be this {'main_sys': 1}
     print(adder.inputs)  # Should be {}
 
 
@@ -70,11 +73,11 @@ def _test_block_diagram_remove_component():
     # This will remove the specified component from the list in the BlockDiagram object and it will remove the component
     # from any input or run that references it
 
-    print(MAIN_SYS_1.sys_comps)  # Should be this [const, const_1, add]
-    print(MAIN_SYS_1._name_mgr._sys_var_names)  # Should be this {'main_sys': 1, 'const': 2, 'add': 1}
+    print(MAIN_SYS_1.comps)  # Should be this [const, const_1, add]
+    print(MAIN_SYS_1._name_mgr._registry)  # Should be this {'main_sys': 1, 'const': 2, 'add': 1}
     MAIN_SYS_1.remove_components(const_1)
-    print(MAIN_SYS_1.sys_comps)  # Should be [const, add]
-    print(MAIN_SYS_1._name_mgr._sys_var_names)  # Should be this {'main_sys': 1, 'const': 1, 'add': 1}
+    print(MAIN_SYS_1.comps)  # Should be [const, add]
+    print(MAIN_SYS_1._name_mgr._registry)  # Should be this {'main_sys': 1, 'const': 1, 'add': 1}
     print(adder.inputs)  # Should be {'input_1': const}
 
     MAIN_SYS_1.clear_diagram()  # Clear for other tests
@@ -91,13 +94,13 @@ def _test_block_diagram_register_component_name():
     const = comps.sources.Constant(MAIN_SYS_1)  # Will be registered as "const"
     const_1 = comps.sources.Constant(MAIN_SYS_1)  # Will be registered as "const_1"
 
-    print(const, const_1)
+    print(const, const_1)  # This should be "const const_1"
 
     # If a custom name is given, then that name is registered as is
 
     const_2 = comps.sources.Constant(MAIN_SYS_1, "const_42")  # Will be registered as "const_42"
 
-    print(const_2)
+    print(const_2)  # This should be "const_42"
 
     # If a custom name is given and the name was already generated, then the name will be registered but every component
     # that was generated using the same base name and has a higher index number will be shifted to the right, so in this
@@ -106,7 +109,7 @@ def _test_block_diagram_register_component_name():
 
     const_3 = comps.sources.Constant(MAIN_SYS_1, "const_1")  # Will be registered as "const_1"
 
-    print(const, const_1, const_2, const_3)
+    print(const, const_1, const_2, const_3)  # This should be "const, const_2, const_42, const_1"
 
     MAIN_SYS_1.clear_diagram()  # Clear diagram for test
 
@@ -118,7 +121,7 @@ def _test_block_diagram_unregister_component_name():
     const_2 = comps.sources.Constant(MAIN_SYS_1)  # Will be registered as "const_2"
     const_3 = comps.sources.Constant(MAIN_SYS_1)  # Will be registered as "const_3"
 
-    print(const, const_1, const_2, const_3)
+    print(const, const_1, const_2, const_3)  # This should be "const, const_1, const_2, const_3"
 
     # When removing a component, it will unregister its name. It will verify the amount of times the base name "const"
     # has been registered and it will use the index number (in this case 1) to shift the subsequent names to the left
@@ -127,7 +130,7 @@ def _test_block_diagram_unregister_component_name():
 
     MAIN_SYS_1.remove_components(const_1)  # It will unregister "const_1"
 
-    print(const, const_2, const_3)
+    print(const, const_2, const_3)  # This should be "const, const_1, const_2"
 
 
 # Test _NameManager class
@@ -143,17 +146,15 @@ def test_name_manager():
 
 def _test_name_manager_registering():
 
-    MAIN_SYS._name_mgr.register_component_name("const_1")  # This registers the custom name
+    MAIN_SYS._name_mgr.register_custom_name("const_1")  # This registers the custom name
 
-    print(MAIN_SYS._name_mgr._sys_var_names)  # This should result in {'main_sys': 1, 'const_1': 1}
+    print(MAIN_SYS._name_mgr._registry)  # This should result in {'main_sys': 1, 'const_1': 1}
 
     # By creating these objects, MAIN_SYS will be registering the object
     # Since no name is provided, MAIN_SYS will tell the name manager to generate a name
 
     const = comps.sources.Constant(MAIN_SYS)  # Generated name is "const"
     const_1 = comps.sources.Constant(MAIN_SYS)  # Generated name is "const_2"
-
-    print(MAIN_SYS._name_mgr._sys_var_names)
 
     # Because "const_1" was registered, the name manager will unregister "const_1" and count the registered name
     # as one of the generated names (since it matches the name generation format for that component). The code will
@@ -162,14 +163,14 @@ def _test_name_manager_registering():
     print(const)  # Should be "const"
     print(const_1)  # Should be "const_2"
 
-    print(MAIN_SYS._name_mgr._sys_var_names)  # This should result in {'main_sys': 1, 'const': 3}
+    print(MAIN_SYS._name_mgr._registry)  # This should result in {'main_sys': 1, 'const': 3}
 
     # If the custom name is a possible generated name in the system and the internal generator count is higher than the
     # one used on the base, then the code will treat it as a generated name and register it (this will only increase
     # the internal count by one)
 
-    MAIN_SYS._name_mgr.register_component_name("const_1")
-    print(MAIN_SYS._name_mgr._sys_var_names)  # This should result in {'main_sys': 1, 'const': 4}
+    MAIN_SYS._name_mgr.register_custom_name("const_1")
+    print(MAIN_SYS._name_mgr._registry)  # This should result in {'main_sys': 1, 'const': 4}
 
 
 def _test_name_manager_unregistering():
@@ -177,20 +178,20 @@ def _test_name_manager_unregistering():
     # Unregistering a name means decreasing the internal component count in the name registry. A component's default
     # name is deleted only when the count reaches 1.
 
-    print(MAIN_SYS._name_mgr._sys_var_names)  # This should result in {'main_sys': 1, 'const': 4}
+    print(MAIN_SYS._name_mgr._registry)  # This should result in {'main_sys': 1, 'const': 4}
 
-    MAIN_SYS._name_mgr.unregister_component_name("const_3")
-    MAIN_SYS._name_mgr.unregister_component_name("const_1")
-    MAIN_SYS._name_mgr.unregister_component_name("const")
+    MAIN_SYS._name_mgr.unregister_name("const_3")
+    MAIN_SYS._name_mgr.unregister_name("const_1")
+    MAIN_SYS._name_mgr.unregister_name("const")
 
-    print(MAIN_SYS._name_mgr._sys_var_names)  # This should result in {'main_sys': 1, 'const': 1}
+    print(MAIN_SYS._name_mgr._registry)  # This should result in {'main_sys': 1, 'const': 1}
 
-    MAIN_SYS._name_mgr.unregister_component_name("const_2")
+    MAIN_SYS._name_mgr.unregister_name("const_2")
 
-    print(MAIN_SYS._name_mgr._sys_var_names)  # This should result in {'main_sys': 1}
+    print(MAIN_SYS._name_mgr._registry)  # This should result in {'main_sys': 1}
 
     # Expected unregistration errors
-    # MAIN_SYS._name_mgr.unregister_component_name("const")  # Results in NameError since name is not registered anymore
+    # MAIN_SYS._name_mgr.unregister_name("const")  # Results in NameError since name is not registered anymore
 
 
 def _test_name_manager_name_generation():
@@ -235,16 +236,16 @@ def _test_name_manager_name_generation():
     print(test_sys_2)  # Should be "test_2"
     print(test_sys_3)  # Should be "test_3"
 
-    print(main_const, main_const_1)
+    print(main_const, main_const_1)  # This should be "const const_1"
     main_const_2 = comps.sources.Constant(MAIN_SYS)
     main_const_3 = comps.sources.Constant(MAIN_SYS, "const_1")
-    print(main_const, main_const_1, main_const_2, main_const_3)
+    print(main_const, main_const_1, main_const_2, main_const_3)  # This should be "const const_2 const_3 const_1"
 
     MAIN_SYS.remove_components(main_const)
-    print(main_const, main_const_1, main_const_2, main_const_3)
+    print(main_const_1, main_const_2, main_const_3)  # This should be "const_1 const_2 const"
 
     MAIN_SYS.remove_components(main_const_1)
-    print(main_const_2, main_const_3)
+    print(main_const_2, main_const_3)  # This should be "const_1 const"
 
 
 def _test_name_manager_component_name_registration_status():
@@ -252,18 +253,18 @@ def _test_name_manager_component_name_registration_status():
     # The method shown here just verifies if the name is in the registry or not
 
     # Should be True since it is currently registered
-    print(MAIN_SYS._name_mgr.component_name_registered('const'))
+    print(MAIN_SYS._name_mgr.is_name_registered('const'))
 
     # Should be True since it is registered implicitly through the name registry internal counter. Internally, the
     # system will store the base name "const" and count how many times it has been used to register the name
-    print(MAIN_SYS._name_mgr.component_name_registered('const_1'))
+    print(MAIN_SYS._name_mgr.is_name_registered('const_1'))
 
     # Should be True since it was just registered
-    MAIN_SYS._name_mgr.register_component_name("const_777")  # Register name
-    print(MAIN_SYS._name_mgr.component_name_registered('const_777'))
+    MAIN_SYS._name_mgr.register_custom_name("const_777")  # Register name
+    print(MAIN_SYS._name_mgr.is_name_registered('const_777'))
 
     # Should be False since it hasn't been registered
-    print(MAIN_SYS._name_mgr.component_name_registered('const_42'))
+    print(MAIN_SYS._name_mgr.is_name_registered('const_42'))
 
 
 def _test_name_manager_get_component_name_count():
@@ -286,6 +287,6 @@ def _test_name_manager_get_component_base_name_attributes():
     # then the name is unique and it doesn't match the name generation format which is the original regex format I
     # showed. It will just return the name as it was given.
 
-    print(MAIN_SYS._name_mgr.get_component_base_name_attributes("const"))  # Will return ("const", 0)
-    print(MAIN_SYS._name_mgr.get_component_base_name_attributes("const_1"))  # Will return ("const_1", 1)
-    print(MAIN_SYS._name_mgr.get_component_base_name_attributes("test_3_const_42"))  # Will return ("test_3_const", 42)
+    print(MAIN_SYS._name_mgr.get_name_attrs("const"))  # Will return ("const", 0)
+    print(MAIN_SYS._name_mgr.get_name_attrs("const_1"))  # Will return ("const_1", 1)
+    print(MAIN_SYS._name_mgr.get_name_attrs("test_3_const_42"))  # Will return ("test_3_const", 42)

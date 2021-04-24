@@ -19,7 +19,8 @@ from collections.abc import Callable, Collection
 
 import numpy as np
 
-from ..utils import classproperty, abstractclassproperty, CPEnabledTypeABC
+from ..utils.mixins import CPEnabledTypeABC
+from ..utils.cls_prop import classproperty, abstractclassproperty
 
 
 # Base component classes
@@ -27,99 +28,28 @@ from ..utils import classproperty, abstractclassproperty, CPEnabledTypeABC
 class BaseComponent(CPEnabledTypeABC):
     """Interface for component objects.
 
-    All of the necessary component behavior is defined in this class.If you
+    All of the necessary component behavior is defined in this class. If you
     want to create a custom component, you only need to inherit and override
-    the abstract methods. You can follow the guide to create your own
-    component.
+    the abstract methods.
     """
 
-    # Component initialization and helpers
-
-    def __init__(self, sys_obj, name=None, **parameters):  # Inputs might not be needed for all components
-
-        self._verify_if_diagram(sys_obj)
+    def __init__(self, sys_obj, name=None, **parameters):
 
         self.sys = sys_obj  # System that contains object
         self.is_not_mapped = True  # Indicates if component has been ordered
-        self.name = self._assign_component_name(name)  # Name of the component
-        self.code_str = {"Set Up": None, "Execution": None}  # Storage for generated strings
-        self._input = _ComponentProperty.init("input", self.input_info)
-        self._output = _ComponentProperty.init("output", self.output_info)
-        self._parameter = _ComponentProperty.init("parameter", self.parameter_info)
+        self.code_str = {"Set Up": None, "Execution": None}  # Storage for generated code string
+        self.name = sys_obj.register_component_name(self, name)  # Name of the component
+        self._input = _ComponentProperty.init("input", self.input_info)  # Inputs of the component
+        self._output = _ComponentProperty.init("output", self.output_info)  # Outputs of the component
+        self._parameter = _ComponentProperty.init("parameter", self.parameter_info)  # Parameters of the component
 
         self.parameters.add(**parameters)  # Add any parameters that were specified in the constructor
-
-    def _verify_if_diagram(self, sys_obj):
-
-        if sys_obj is None:
-            if not hasattr(self, "sys_comps"):
-                raise TypeError("Non-system components must reside in a block diagram or subsystem")
-        else:
-            sys_obj.sys_comps.append(self)  # Add component to system
-
-    def _assign_component_name(self, name):
-
-        if self.sys is None:  # This means this component is a main system
-            return name
-        self.name = name  # Temporarily assign name (it can be None in some cases)
-        return self.sys.diagram.register_component_name_in_diagram(self)  # Will run the actual name of the component
-
-    # Dunder methods
+        if not self.is_block_diagram():
+            sys_obj.comps.append(self)  # Add component to system component
 
     def __repr__(self):
+
         return self.name
-
-    # Public component methods and attributes
-
-    def pass_default_parameters(self):
-        """
-        This method will pass the default parameters stored in the
-        attribute parameter_info (i.e. if it's not None). This will
-        only work if parameter_info[1] is a dictionary. If not, it
-        will skip the passing process.
-        """
-
-        if self.parameter_info is not None and isinstance(self.parameter_info[1], dict):
-            req_parameters, all_parameters = self.parameter_info
-
-            # Get the non-required parameters that were not initialized with a value
-            non_initialized_parameter = {}
-            for parameter, default_value in all_parameters.items():
-                if parameter not in req_parameters and self.parameters[parameter] is None:
-                    non_initialized_parameter[parameter] = default_value
-
-            self.parameters.update(update_dict=non_initialized_parameter)
-
-    ## Property verification methods
-
-    def verify_properties(self):
-        """
-        Verify if the component's properties follows the component's set of
-        rules. By default, it will verify if the component's required
-        properties from its inputs, outputs, and parameters were assigned
-        values. If you want to add another verification, just override this
-        method, use "super" to reference this method and add your verification
-        for the component that inherits from this class.
-        """
-
-        prop_names = ["inputs", "outputs", "parameters"]
-        prop_infos = [self.input_info, self.output_info, self.parameter_info]
-
-        for prop_name, prop_info in zip(prop_names, prop_infos):
-            if prop_info is not None:
-                self._verify_required_values(prop_name, prop_info)
-
-    def _verify_required_values(self, prop_name, prop_info):
-
-        req_props = prop_info[0]
-        comp_prop = getattr(self, prop_name)
-        non_assigned_req_props = [req_prop for req_prop in req_props if comp_prop[req_prop] is None]
-
-        if len(non_assigned_req_props) > 0:
-            raise TypeError(f'For component "{self}", the following variables {non_assigned_req_props}'
-                            f' in "{prop_name}" were not assigned values."')
-
-    ## Component properties and classproperties
 
     @abstractclassproperty
     def default_name(self):
@@ -165,10 +95,8 @@ class BaseComponent(CPEnabledTypeABC):
         """
 
     @abstractmethod
-    def generate_component_string(self):
-        """
-        This generates the functionality of the component within a string.
-        """
+    def generate_code_string(self):
+        """Create the code for the component."""
 
     @property
     def inputs(self):  # TODO: Elaborate more on how inputs work
@@ -187,6 +115,87 @@ class BaseComponent(CPEnabledTypeABC):
         """Parameters used for calculations in the system."""
 
         return self._parameter
+
+    def is_block_diagram(self):
+        """Verifies if component is a block diagram component."""
+
+        return self.sys is self
+        # return self.sys is None
+
+    def is_system(self):
+        """Verifies if component is a system component."""
+
+        return hasattr(self, "comps")
+
+    def generate_name(self) -> str:
+        """Generates a name for a component.
+
+        The name is generated by doing the following:
+
+        - When a component is a system or it does not reside within a subsystem,
+          the name for the using the default name of the component, its name is
+          generated only using its default name.
+
+        - Otherwise, the component uses the component's system's name + the
+          component's default name to generate the name.
+        """
+
+        sys_comp = self.sys  # Component's system container (could be a diagram or subsystem)
+
+        # Get the component's name
+        name = self.default_name
+        is_in_subsystem = not sys_comp.is_block_diagram()
+        if not self.is_system() and is_in_subsystem:
+            name = sys_comp.name + "_" + name
+
+        return name
+
+    def pass_default_parameters(self):
+        """Pass the default parameters stored in the attribute
+        parameter_info.
+
+        For this to work, parameter_info[1] has to be a dictionary. If not,
+        it will skip the value passing process.
+        """
+
+        if self.parameter_info is not None and isinstance(self.parameter_info[1], dict):
+            req_parameters, all_parameters = self.parameter_info
+
+            # Get the non-required parameters that were not initialized with a value
+            non_init_parameters = {}
+            for parameter, default_value in all_parameters.items():
+                if parameter not in req_parameters and self.parameters[parameter] is None:
+                    non_init_parameters[parameter] = default_value
+
+            self.parameters.update(update_dict=non_init_parameters)
+
+    def verify_properties(self):
+        """Verify if the component's properties are well-defined for a
+        component.
+
+        By default, it will verify if the component's required properties
+        from its inputs, outputs, and parameters were assigned values. If
+        you want to add another verification, just override this method,
+        use "super" to reference this method and add your verification for
+        the component that inherits from this class.
+        """
+
+        prop_names = ["inputs", "outputs", "parameters"]
+        prop_infos = [self.input_info, self.output_info, self.parameter_info]
+
+        for prop_name, prop_info in zip(prop_names, prop_infos):
+            if prop_info is not None:
+                self._verify_required_values(prop_name, prop_info)
+
+    def _verify_required_values(self, prop_name, prop_info):
+
+        req_props = prop_info[0]
+        comp_prop = getattr(self, prop_name)
+        non_assigned_req_props = [req_prop for req_prop in req_props if comp_prop[req_prop] is None]
+
+        if len(non_assigned_req_props) > 0:
+            raise TypeError(f'For component "{self}", the following variables {non_assigned_req_props}'
+                            f' in "{prop_name}" were not assigned values."')
 
 
 # Useful functions, and variables that can used for components building
@@ -225,13 +234,12 @@ generate_parameter_info = _persistent_classprop_factory("parameter_info", (tuple
 class BaseNormalComponent(BaseComponent):
     """Interface for "normal" component objects.
 
-    "Normal" components are components that are not system components, so these
-    cannot store items inside of them. In addition to this, these components
-    have the following restrictions:
+    "Normal" components are components that are not system components, so
+    these cannot store items inside of them. In addition to this, these
+    components have the following restrictions:
 
-    - Their output property cannot be modified. That is, you cannot
-      add items to their output. This is only reserved for system
-      components.
+    - Their output property cannot be modified. That is, you cannot add
+      items to their output. This is only reserved for system components.
 
     All of these restrictions are present in this base class, so you do not
     need to recreate them if you inherit from this class.
@@ -256,7 +264,7 @@ class BaseNormalComponent(BaseComponent):
         pass
 
     @abstractmethod
-    def generate_component_string(self):
+    def generate_code_string(self):
         pass
 
 
@@ -268,7 +276,7 @@ def _non_erasable_order_dependent_method(func):
     @wraps(func)
     def method_wrapper(*args):
         self = args[0]
-        if self._is_order_invariant:
+        if self.is_order_invariant:
             return func(*args)
         raise AttributeError("You cannot erase the items of an order-dependent property.")
 
@@ -401,21 +409,43 @@ class _ComponentProperty(dict):
                       "output": (BaseComponent, type(None)),
                       "parameter": (Number, Callable, Collection, np.generic, np.ndarray, type(None))}
 
-    # Property initialization
+    # Component property initialization
 
-    def __init__(self, new_dict, prop_name, prop_info):
+    def __init__(self, new_dict: dict, prop_name: str, prop_info):
 
         self.prop_name = prop_name  # Property name
         self._within_method = False  # Verify if the object is being modified within a method
         if prop_info is None:
             self._key_gen_count = 1
-            self._is_order_invariant = True
+            self.is_order_invariant = True
         else:
-            self._is_order_invariant = False
+            self.is_order_invariant = False
 
         super().__init__(new_dict)
 
-    # Public property methods
+    @_block_outside_modification
+    @_non_erasable_order_dependent_method
+    def __delitem__(self, key: str):
+
+        if re.match(self.prop_name + "_[1-9][0-9]*", key):  # If it matches generated key format
+            self._key_gen_count -= 1  # Adjust key generator count for the next generated key
+            super().__delitem__(key)
+            self._shift_values_to_the_left(key)
+        else:
+            raise KeyError(f"{key} does not match the generated key format of this class. "
+                           "You can check the available keys with the show_variables method.")
+
+    @_block_outside_modification
+    def __setitem__(self, key: str, value):
+
+        self._check_key_type(key)
+        self._check_value_type(value)
+        if self.is_order_invariant:
+            self._check_for_key_generated_format(key)
+        else:
+            self._check_if_key_is_in_defined_variables(key)
+
+        super().__setitem__(key, value)
 
     def add(self, *args, **kwargs):
         """Add value(s) to the component property.
@@ -431,7 +461,7 @@ class _ComponentProperty(dict):
         self._within_method = True
 
         # Add item(s)
-        if self._is_order_invariant:
+        if self.is_order_invariant:
             for value in args:
                 self[self.prop_name + f"_{self._key_gen_count}"] = value
                 self._key_gen_count += 1
@@ -451,16 +481,21 @@ class _ComponentProperty(dict):
         super().clear()
         self._key_gen_count = 1
 
-    @classmethod
-    def init(cls, prop_name, prop_info):
+    def get_prop_variables(self):
+        """Display all the variables of the component property."""
+
+        return list(self)
+
+    @staticmethod
+    def init(prop_name, prop_info):
         """Shorthand constructor for initializing component properties."""
 
         if prop_info is None:
-            return cls({}, prop_name, prop_info)
-        return cls({prop_name: None for prop_name in prop_info[1]}, prop_name, prop_info)
+            return _ComponentProperty({}, prop_name, prop_info)
+        return _ComponentProperty({prop_name: None for prop_name in prop_info[1]}, prop_name, prop_info)
 
     @_detect_invalid_key_entry
-    def pop(self, key):
+    def pop(self, key: str):
         """Remove the specified entry and return its value.
 
         Note the key will still be there if it wasn't the last one generated.
@@ -491,10 +526,20 @@ class _ComponentProperty(dict):
         self._within_method = False
         return item
 
-    def get_prop_variables(self):
-        """Display all the variables of the component property."""
+    def remove(self, value):
+        """Remove the given value from the property."""
 
-        return list(self)
+        self._within_method = True
+
+        # Remove the component
+        for key, prop_comp in self.copy().items():
+            if prop_comp == value:
+                if self.is_order_invariant:
+                    del self[key]
+                else:
+                    self[key] = None
+
+        self._within_method = False
 
     def sort(self) -> list:
         """Returns an ordered list of values of an order-invariant property.
@@ -507,12 +552,10 @@ class _ComponentProperty(dict):
         For example, if k = 4, then ["prop_1", "prop_2", "prop_3"] is the resulting list.
         """
 
-        if self._is_order_invariant:
+        if self.is_order_invariant:
             return [self[self.prop_name + f"_{i}"] for i in range(1, self._key_gen_count)]
         raise AttributeError("Order-dependent component properties do not need to be organized."
                              " Extract the relevant value by using its key/variable.")
-
-    ## Update methods
 
     def update(self, update_dict=None, **kwargs):
         """Update existing component property entries."""
@@ -524,31 +567,8 @@ class _ComponentProperty(dict):
 
         self._update(kwargs)
 
-    def _update(self, kwargs):
-
-        non_registered_keys = [key for key in kwargs if key not in self]  # List of invalid keys
-        if len(non_registered_keys) == 0:  # If no invalid key was entered
-            super().update(kwargs)
-        else:
-            raise KeyError(f"The keys '{', '.join(non_registered_keys)}' are "
-                           f"not among the registered keys: {', '.join(self.keys())}.")
-
-    # Set property variable methods
-
-    @_block_outside_modification
-    def __setitem__(self, key, value):
-
-        self._check_key_type(key)
-        self._check_value_type(value)
-        if self._is_order_invariant:
-            self._check_for_key_generated_format(key)
-        else:
-            self._check_if_key_is_in_defined_variables(key)
-
-        super().__setitem__(key, value)
-
     @staticmethod
-    def _check_key_type(key):
+    def _check_key_type(key: str):
 
         if not isinstance(key, str):
             raise TypeError("The key/variable of a component property must be a string.")
@@ -586,20 +606,6 @@ class _ComponentProperty(dict):
                 raise KeyError(f"No entries are allowed for the component's {self.prop_name}s.")
             raise KeyError(f'The variable "{key}" is not among these variables: {", ".join(self.keys())}.')
 
-    # Delete property variable methods
-
-    @_block_outside_modification
-    @_non_erasable_order_dependent_method
-    def __delitem__(self, key):
-
-        if re.match(self.prop_name + "_[1-9][0-9]*", key):  # If it matches generated key format
-            self._key_gen_count -= 1  # Adjust key generator count for the next generated key
-            super().__delitem__(key)
-            self._shift_values_to_the_left(key)
-        else:
-            raise KeyError(f"{key} does not match the generated key format of this class. "
-                           "You can check the available keys with the show_variables method.")
-
     def _shift_values_to_the_left(self, key):
 
         key_index = int(key.rsplit('_', maxsplit=1)[1])
@@ -611,3 +617,12 @@ class _ComponentProperty(dict):
             self[key] = new_prop_entries[key]  # Re-register the deleted key
             self.update(new_prop_entries)  # Add the rest of the entries
             super().__delitem__(prop_name.format(self._key_gen_count))  # Delete last entry
+
+    def _update(self, kwargs: dict):
+
+        non_registered_keys = [key for key in kwargs if key not in self]  # List of invalid keys
+        if len(non_registered_keys) == 0:  # If no invalid key was entered
+            super().update(kwargs)
+        else:
+            raise KeyError(f"The keys '{', '.join(non_registered_keys)}' are "
+                           f"not among the registered keys: {', '.join(self.keys())}.")

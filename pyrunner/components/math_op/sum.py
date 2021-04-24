@@ -147,7 +147,7 @@ class Sum(BaseNormalComponent):
 
     parameter_info = generate_parameter_info(_PARAMETER_INFO)
 
-    def generate_component_string(self):
+    def generate_code_string(self):
 
         start_str = f"{self.name} = "
         inputs = self.inputs.sort()

@@ -15,7 +15,3 @@ objects. Runners are composed of three parts:
       the object that will be returned for users to run.
 """
 
-available_runners = frozenset(["seq", "para"])  # This is used for verification. Add any runner here
-
-__all__ = [runner + "_runner" for runner in available_runners]
-

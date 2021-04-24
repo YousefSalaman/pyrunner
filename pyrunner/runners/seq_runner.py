@@ -18,6 +18,6 @@ class Runner(BaseRunner):
 
 class Builder(BaseBuilder):
 
-    def determine_component_placement(self, comp):
+    def map_component(self, comp):
 
         self.ordered_comps.append(comp)

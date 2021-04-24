@@ -96,7 +96,7 @@ if __name__ == "__main__":
     j.inputs.add(i)
     k.inputs.add(j)
 
-    seq_sys.build_diagram()
+    seq_sys.build()
 
     a = TestCompNonDirect(para_sys, 'a')
     a1 = TestCompDirect(para_sys, 'a1')
@@ -134,7 +134,7 @@ if __name__ == "__main__":
     j.inputs.add(i)
     k.inputs.add(j)
 
-    para_sys.build_diagram()
+    para_sys.build()
 
     para_sys = BlockDiagram("para_sys", "para")
 
@@ -173,4 +173,4 @@ if __name__ == "__main__":
     p.inputs.add(n)
     q.inputs.add(p)
 
-    para_sys.build_diagram()
+    para_sys.build()
