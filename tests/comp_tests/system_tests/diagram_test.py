@@ -165,12 +165,10 @@ def _test_name_manager_registering():
 
     print(MAIN_SYS._name_mgr._registry)  # This should result in {'main_sys': 1, 'const': 3}
 
-    # If the custom name is a possible generated name in the system and the internal generator count is higher than the
-    # one used on the base, then the code will treat it as a generated name and register it (this will only increase
-    # the internal count by one)
+    # Expected registration errors
 
-    MAIN_SYS._name_mgr.register_custom_name("const_1")
-    print(MAIN_SYS._name_mgr._registry)  # This should result in {'main_sys': 1, 'const': 4}
+    # If a custom name is entered and that name was already explicitly registered, then the code will raise an error
+    # MAIN_SYS._name_mgr.register_custom_name("const_1")
 
 
 def _test_name_manager_unregistering():
@@ -178,19 +176,28 @@ def _test_name_manager_unregistering():
     # Unregistering a name means decreasing the internal component count in the name registry. A component's default
     # name is deleted only when the count reaches 1.
 
-    print(MAIN_SYS._name_mgr._registry)  # This should result in {'main_sys': 1, 'const': 4}
+    print(MAIN_SYS._name_mgr._registry)  # This should result in {'main_sys': 1, 'const': 3}
 
-    MAIN_SYS._name_mgr.unregister_name("const_3")
-    MAIN_SYS._name_mgr.unregister_name("const_1")
+    MAIN_SYS._name_mgr.unregister_name("const_2")
     MAIN_SYS._name_mgr.unregister_name("const")
 
     print(MAIN_SYS._name_mgr._registry)  # This should result in {'main_sys': 1, 'const': 1}
 
-    MAIN_SYS._name_mgr.unregister_name("const_2")
+    # The line below won't unregister anything because the count in the name registry is lower than the name index
+    # in the name "const_2", which would be 2 in this case and this would indicate that this number is not registered
+    # This should seem weird since I only unregistered "const" and not "const_2", but this object also relies on the
+    # fact that the BlockDiagram object will shift the names accordingly, so in this case, when the names are shifted
+    # the component that was named "const_2" will change its name to "const".
+    MAIN_SYS._name_mgr.unregister_name("const_1")
+
+    print(MAIN_SYS._name_mgr._registry)  # This should result in {'main_sys': 1, 'const': 1}
+
+    MAIN_SYS._name_mgr.unregister_name("const")  # Unregister const completely from the name registry
 
     print(MAIN_SYS._name_mgr._registry)  # This should result in {'main_sys': 1}
 
     # Expected unregistration errors
+
     # MAIN_SYS._name_mgr.unregister_name("const")  # Results in NameError since name is not registered anymore
 
 

@@ -58,10 +58,10 @@ class BlockDiagram(BaseSystem):
     - It can register or unregister component names to its internal name
       registry.
 
-    - It builds the different components by organizing and generating the 
+    - It builds the different components by organizing and generating the
       code to run the system. To do this, the system uses a runner module,
       which contains the instructions on how to do these tasks.
-      
+
     - It can remove or add any components to the system (except another diagram
       object.)
     """
@@ -83,7 +83,7 @@ class BlockDiagram(BaseSystem):
         try:
             self.diagram = self  # State you're the diagram for your subsystems
             self._name_mgr = _NameManager()  # A "namespace" to register components
-            self.runner = find_module(runner_name, "runners")
+            self.runner = find_module(runner_name, "runners")  # Runner object
 
             self._DIAGRAMS.append(self)  # Register diagram in class
 
@@ -256,30 +256,21 @@ class _NameManager:
 
     def get_name_count(self, name: str):
         """Get the amount of times a name has been registered.
-        
-        It return None if the key is invalid."""
 
-        if name in self._registry:  # If name is explicitly registered
+        Returns 0 if the given name is not found in the name registry.
+        """
+
+        if self._is_explicitly_registered(name):
             return self._registry[name]
-
-        if self._is_implicitly_registered(name):
+        elif self._is_implicitly_registered(name):
             basename, _ = self.get_name_attrs(name)
             return self._registry[basename]
-
-        return  # Otherwise, return nothing
+        return 0
 
     def is_name_registered(self, name: str):
         """Verify if name is registered in the name registry."""
 
-        if name in self._registry:  # Check for explicit registration
-            return True
-
-        # Check if the name has the generated name format and then check for
-        # implicit registration
-        if re.search("(_[1-9][0-9]*)+$", name):
-            return self._is_implicitly_registered(name)
-
-        return False  # Otherwise, it's not there
+        return self._is_explicitly_registered(name) or self._is_implicitly_registered(name)
 
     def register_custom_name(self, name: str):
         """Register a custom name.
@@ -298,16 +289,12 @@ class _NameManager:
         """
 
         if re.search("(_[1-9][0-9]*)+$", name):  # Verify if name has indexed format
-
-            # Check if name is already explicitly registered
-            if name in self._registry:
+            if self._is_explicitly_registered(name):
                 raise NameError("No duplicate names with indexes, like 'vars_1', are not allowed "
                                 "as a custom name.")
-
-            # Check if name is implicitly registered and register if it is
             if self._is_implicitly_registered(name):
                 basename, _ = self.get_name_attrs(name)
-                self.register_name(basename)
+                self.register_name(basename)  # Implicitly register name
                 return name
 
         return self.register_name(name)  # Otherwise, explicitly register name
@@ -316,54 +303,46 @@ class _NameManager:
         """Register a name explicitly or implicitly.
 
         In case a name that is implicitly registered, but the new generated
-        name clashes with a name that has been previously entered, then the
-        explicitly registered name is will be unregistered. In other words, the
-        entry under that name will be deleted since it is implicitly registered
-        in the name registry, so there is no need for the same name to appear
-        in the registry as a key.
+        name clashes with an explicitly registered name that has been
+        previously entered, then the explicitly registered name is will be
+        unregistered. In other words, the entry under that name will be
+        deleted since it is implicitly registered in the name registry, so
+        there is no need for the same name to appear in the registry as a key.
         """
 
-        if name in self._registry:  # Update name registry (i.e. implicitly register name)
+        if self._is_explicitly_registered(name):  # Update name registry (i.e. implicitly register name)
             while True:
                 new_name = name + "_" + str(self._registry[name])
                 self._registry[name] += 1
-                if new_name in self._registry:  # There's an explicitly registered name that clashes with the new name
-                    self.unregister_name(new_name)
-                else:
-                    return new_name
+                if not self._is_explicitly_registered(new_name):
+                    return new_name  # Return new name if no other name in the registry clashes with this name
+                self.unregister_name(new_name)  # Delete name that clashes with the new name
 
         # Register name for the first time (i.e. explicitly register name)
         self._registry[name] = 1
         return name
 
-    def unregister_name(self, name):
+    def unregister_name(self, name: str):
         """Unregister a component name from the name registry.
 
         Three things can happen when using this method:
 
-        - If the component's name is found in the name registry, then it is
-          unregistered.
+        - If the name is found in the name registry (i.e., the name is
+          explicitly registered), then it is unregistered.
 
-        - If the component's basename is found in the name registry, then the
-          basename is unregistered instead.
+        - If the name is implicitly registered, then the basename is
+          unregistered instead.
 
-        - Otherwise, it will count as an invalid name entry was going to be
-          deleted and raises a NameError.
+        - Otherwise, it will count as an non-existent entry was going to be
+          unregistered and it does not unregister anything.
         """
 
-        # It's a custom name or the default name of a component (i.e. its "base name")
-        if name in self._registry:
-            self._unregister_name(name)
-
-        # It's a generated name or it's a custom name that matches the name generation format
-        elif re.search("(_[1-9][0-9]*)+$", name):
+        name_cnt = self.get_name_count(name)
+        if name_cnt == 1:
+            del self._registry[name]
+        elif name_cnt > 1:
             basename, _ = self.get_name_attrs(name)
-            if basename in self._registry:
-                self._unregister_name(basename)
-
-        # An invalid name was entered
-        else:
-            raise NameError(f"Component name {name} was not found in name registry.")
+            self._registry[basename] -= 1
 
     def _is_implicitly_registered(self, name: str) -> bool:
         """Verify if name is implicitly registered in the name registry.
@@ -376,10 +355,10 @@ class _NameManager:
         basename, name_index = self.get_name_attrs(name)
         return basename in self._registry and name_index < self._registry[basename]
 
-    def _unregister_name(self, name: str):
+    def _is_explicitly_registered(self, name: str) -> bool:
+        """Verify if name is explicitly registered in the name registry.
 
-        name_cnt = self._registry[name]  # Amount of times the name has been registered
-        if name_cnt == 1:
-            del self._registry[name]
-        elif name_cnt > 1:
-            self._registry[name] -= 1
+        This only happens if the given name appears as a key in the registry.
+        """
+
+        return name in self._registry

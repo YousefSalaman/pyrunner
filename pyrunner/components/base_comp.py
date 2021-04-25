@@ -120,7 +120,6 @@ class BaseComponent(CPEnabledTypeABC):
         """Verifies if component is a block diagram component."""
 
         return self.sys is self
-        # return self.sys is None
 
     def is_system(self):
         """Verifies if component is a system component."""
