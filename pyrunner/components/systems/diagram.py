@@ -1,5 +1,6 @@
 __all__ = ["BlockDiagram"]
 
+
 import re
 from functools import wraps
 
@@ -290,8 +291,8 @@ class _NameManager:
 
         if re.search("(_[1-9][0-9]*)+$", name):  # Verify if name has indexed format
             if self._is_explicitly_registered(name):
-                raise NameError("No duplicate names with indexes, like 'vars_1', are not allowed "
-                                "as a custom name.")
+                raise NameError(f"{name} is already registered and no duplicate indexed names"
+                                " are allowed in the name registry.")
             if self._is_implicitly_registered(name):
                 basename, _ = self.get_name_attrs(name)
                 self.register_name(basename)  # Implicitly register name
@@ -344,6 +345,14 @@ class _NameManager:
             basename, _ = self.get_name_attrs(name)
             self._registry[basename] -= 1
 
+    def _is_explicitly_registered(self, name: str) -> bool:
+        """Verify if name is explicitly registered in the name registry.
+
+        This only happens if the given name appears as a key in the registry.
+        """
+
+        return name in self._registry
+
     def _is_implicitly_registered(self, name: str) -> bool:
         """Verify if name is implicitly registered in the name registry.
 
@@ -354,11 +363,3 @@ class _NameManager:
 
         basename, name_index = self.get_name_attrs(name)
         return basename in self._registry and name_index < self._registry[basename]
-
-    def _is_explicitly_registered(self, name: str) -> bool:
-        """Verify if name is explicitly registered in the name registry.
-
-        This only happens if the given name appears as a key in the registry.
-        """
-
-        return name in self._registry
