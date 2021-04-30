@@ -1,23 +1,28 @@
 
-from ..base_comp import *
+from .. import base_comp
 
 
-_INPUT_INFO = ({"input"},
-               {"input"})
+class Abs(base_comp.BaseComponent):
 
-_PARAMETER_INFO = ({},
-                   {})
+    default_name = base_comp.generate_default_name("absolute")
 
+    direct_feedthrough = base_comp.generate_direct_feedthrough(True)
 
-class Abs(BaseNormalComponent):
+    prop_info = base_comp.generate_prop_info(
+        {
+            "inputs": ({"input"}, {"input"}),
+            "outputs": ({}, {}),
+            "parameters": ({}, {})
+        }
+    )
 
-    default_name = generate_default_name("absolute")
+    _LIB_DEPS = {"numpy": "np"}
 
-    direct_feedthrough = generate_direct_feedthrough(True)
+    def __init__(self, sys_obj, name=None):
 
-    input_info = generate_input_info(_INPUT_INFO)
+        super().__init__(sys_obj, name)
 
-    parameter_info = generate_parameter_info(_PARAMETER_INFO)
+        self._lib_deps = self._LIB_DEPS
 
     def generate_code_string(self):
 

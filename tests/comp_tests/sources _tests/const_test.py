@@ -1,10 +1,10 @@
-from Simupynk.Simupynk.components import *
+from pyrunner.pyrunner.components import *
 
 if __name__ == "__main__":
     main_sys = systems.BlockDiagram("main_sys", "seq")
 
     const_1 = sources.Constant(main_sys)
-    const_2 = sources.Constant(main_sys)
+    const_2 = sources.Constant(main_sys, lib_deps={"numpy": "np"})
 
     # const_1.inputs.add(test=const_2)  # This will produce a KeyError since no inputs can be added
     # const_1.outputs.add(test=const_2)  # This will produce a KeyError since no outputs can be added

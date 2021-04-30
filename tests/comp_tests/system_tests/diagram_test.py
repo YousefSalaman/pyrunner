@@ -7,11 +7,13 @@ class TestSystem(comps.systems.BaseSubsystem):
 
     direct_feedthrough = comps.generate_direct_feedthrough(False)
 
-    input_info = comps.generate_input_info(None)
-
-    output_info = comps.generate_output_info(None)
-
-    parameter_info = comps.generate_parameter_info(None)
+    prop_info = comps.generate_prop_info(
+        {
+            "inputs": None,
+            "outputs": None,
+            "parameters": None
+        }
+    )
 
     def _create_components(self):
         pass
@@ -139,9 +141,10 @@ def test_name_manager():
 
     _test_name_manager_registering()
     _test_name_manager_unregistering()
-    _test_name_manager_name_generation()
+    _test_name_manager_name_generation()  # TODO: This one is probably outdated since this is done in the components
     _test_name_manager_component_name_registration_status()
-    _test_name_manager_get_component_base_name_attributes()
+    _test_name_manager_get_name_count()
+    _test_name_manager_get_name_attrs()
 
 
 def _test_name_manager_registering():
@@ -274,7 +277,7 @@ def _test_name_manager_component_name_registration_status():
     print(MAIN_SYS._name_mgr.is_name_registered('const_42'))
 
 
-def _test_name_manager_get_component_name_count():
+def _test_name_manager_get_name_count():
 
     # The method presented here gets how many times the name and if the name is not registered in the name manager. If
     # the name is not found, it will check if the base name of the component is in the name manager.
@@ -285,7 +288,7 @@ def _test_name_manager_get_component_name_count():
     print(MAIN_SYS._name_mgr.get_name_count('const_1'))
 
 
-def _test_name_manager_get_component_base_name_attributes():
+def _test_name_manager_get_name_attrs():
 
     # The method presented will extract the "base name" and an index from a given name or component. It checks if the
     # given name has the format regex format ([a-z][A-Z][0-9])*(_[1-9][0-9]*)+$. Examples of names that match this

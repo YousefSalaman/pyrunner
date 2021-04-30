@@ -1,4 +1,4 @@
-from Simupynk.Simupynk.components import *
+from pyrunner.pyrunner.components import *
 
 
 # Global test components definitions and set-ups

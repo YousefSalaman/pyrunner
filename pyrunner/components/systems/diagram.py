@@ -73,18 +73,21 @@ class BlockDiagram(BaseSystem):
 
     direct_feedthrough = generate_direct_feedthrough(False)
 
-    input_info = generate_input_info(None)
-
-    output_info = generate_output_info(None)
-
-    parameter_info = generate_parameter_info(None)
+    prop_info = generate_prop_info(
+        {
+            "inputs": None,
+            "outputs": None,
+            "parameters": None
+        }
+    )
 
     def __init__(self, name: str, runner_name: str):
 
         try:
             self.diagram = self  # State you're the diagram for your subsystems
+            self.runner, self.runner_name = find_module(runner_name, "runners")  # Runner object
+
             self._name_mgr = _NameManager()  # A "namespace" to register components
-            self.runner = find_module(runner_name, "runners")  # Runner object
 
             self._DIAGRAMS.append(self)  # Register diagram in class
 
@@ -93,7 +96,10 @@ class BlockDiagram(BaseSystem):
 
         super().__init__(self, name)
 
-    def build(self):
+        # TODO: Change this when I make the setup file and make this into an official package
+        self._lib_deps = {f"pyrunner.pyrunner.runners.{self.runner_name}": self.runner_name}
+
+    def build(self, dir_path=None, file_name=None, generate_script=True):
         """Builds up the BlockDiagram object.
 
         This method will do the following to accomplish this:
@@ -109,17 +115,27 @@ class BlockDiagram(BaseSystem):
         - It will generate the code string for the system.
         """
 
-        self.pass_default_parameters()
-        self.verify_properties()
+        self.verify_properties()  # Check if everything in the components was entered correctly
+
+        self.setup()
         self.organize()
         self.generate_code_string()
+        if generate_script:
+            self.runner.Builder.create_code([self], dir_path, file_name)
 
     @classmethod
-    def build_diagrams(cls):
+    def build_diagrams(cls, dir_path, file_name):
         """Build all BlockDiagram objects within a script."""
 
+        runner = None
         for diagram in cls._DIAGRAMS:
-            diagram.build()
+            diagram.build(generate_script=False, dir_path=dir_path, file_name=file_name)
+            if runner is None:
+                runner = diagram.runner
+            elif runner != diagram.runner:
+                raise TypeError("All diagrams within a script must use the same runner type.")
+
+        runner.Builder.create_code(cls._DIAGRAMS, dir_path, file_name)
 
     def clear_diagram(self):
         """Remove all the components directly in the block diagram.
@@ -135,6 +151,12 @@ class BlockDiagram(BaseSystem):
                 comp.unregister_all_components()
             self.unregister_component_name(comp)
             self.remove_component(comp)
+
+    def pass_imports(self, lib_deps):
+        """Update diagram imports with its components libraries."""
+
+        if lib_deps is not None:
+            self._lib_deps.update(lib_deps)
 
     def register_component_name(self, comp: BaseComponent, name: str) -> str:
         """Remove component's name from the name registry.
@@ -192,16 +214,16 @@ class BlockDiagram(BaseSystem):
 
         if similar_name_index > name_index:
             if similar_name_index == 1:
-                similar_comp.name = basename
+                similar_comp._name = basename
             else:
-                similar_comp.name = basename + '_' + str(similar_name_index - 1)
+                similar_comp._name = basename + '_' + str(similar_name_index - 1)
 
     @_shiftmethod
     def _shift_component_names_right(self, basename, name_index, similar_comp, similar_name_index):
         """Shift component names to the right"""
 
         if similar_name_index >= name_index:
-            similar_comp.name = basename + '_' + str(similar_name_index + 1)
+            similar_comp._name = basename + '_' + str(similar_name_index + 1)
 
 
 # Name manager definition
@@ -255,7 +277,7 @@ class _NameManager:
 
         return basename, name_index
 
-    def get_name_count(self, name: str):
+    def get_name_count(self, name: str) -> int:
         """Get the amount of times a name has been registered.
 
         Returns 0 if the given name is not found in the name registry.
@@ -268,12 +290,12 @@ class _NameManager:
             return self._registry[basename]
         return 0
 
-    def is_name_registered(self, name: str):
+    def is_name_registered(self, name: str) -> bool:
         """Verify if name is registered in the name registry."""
 
         return self._is_explicitly_registered(name) or self._is_implicitly_registered(name)
 
-    def register_custom_name(self, name: str):
+    def register_custom_name(self, name: str) -> str:
         """Register a custom name.
 
         Three things can happen when using this method:
@@ -357,8 +379,8 @@ class _NameManager:
         """Verify if name is implicitly registered in the name registry.
 
         This is done by checking if the basename is in the registry and if the
-        name's index is within the amount of generated entries in the registry
-        that use the same basename.
+        name's index is less than within the amount of generated entries in the
+        registry that use the same basename.
         """
 
         basename, name_index = self.get_name_attrs(name)

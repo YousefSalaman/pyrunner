@@ -8,7 +8,7 @@ This component performs the same operation as Simulink's Sum block:
 
 from collections.abc import Sequence
 
-from ..base_comp import *
+from .. import base_comp
 
 
 # Function helpers
@@ -76,13 +76,9 @@ def _verify_for_dimension_addition(parameters):
 
 # Sum component definition
 
-_PARAMETER_INFO = ({"comp_signs"},
-                   {"comp_signs": None, "dimension": None, "dtype": None})
 
-
-class Sum(BaseNormalComponent):
-    """
-    A component that performs addition and subtraction with its inputs.
+class Sum(base_comp.BaseComponent):
+    """A component that performs addition and subtraction with its inputs.
 
     If the component has only one input, it will sum over the input vector/matrix.
     You can control over what dimension/axis it sums over by specifying it in the
@@ -139,13 +135,22 @@ class Sum(BaseNormalComponent):
       the given input.
     """
 
-    default_name = generate_default_name("add")
+    default_name = base_comp.generate_default_name("add")
 
-    direct_feedthrough = generate_direct_feedthrough(True)
+    direct_feedthrough = base_comp.generate_direct_feedthrough(True)
 
-    input_info = generate_input_info(None)
+    prop_info = base_comp.generate_prop_info(
+        {
+            "inputs": None,
+            "outputs": ({}, {}),
+            "parameters": ({"comp_signs"},
+                           {"comp_signs": None, "dimension": None, "dtype": None})
+        }
+    )
 
-    parameter_info = generate_parameter_info(_PARAMETER_INFO)
+    def __init__(self, sys_obj, name=None, **parameters):
+
+        super().__init__(sys_obj, name, **parameters)
 
     def generate_code_string(self):
 
@@ -166,6 +171,8 @@ class Sum(BaseNormalComponent):
         input_len = len(self.inputs)
         _verify_comp_signs(self.parameters["comp_signs"], input_len)
         if input_len >= 1:
+            if input_len == 1:
+                self._lib_deps = {"numpy": "np"}  # Add numpy to the library
             _verify_for_dimension_addition(self.parameters)
         else:
             raise AttributeError("The Sum component must contain at least one input.")

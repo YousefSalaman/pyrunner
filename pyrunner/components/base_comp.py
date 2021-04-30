@@ -3,21 +3,14 @@ This module holds the base component class
 """
 
 __all__ = ["BaseComponent",
-           "BaseNormalComponent",
+           "generate_prop_info",
            "generate_default_name",
-           "generate_direct_feedthrough",
-           "generate_input_info",
-           "generate_output_info",
-           "generate_parameter_info"]
+           "generate_direct_feedthrough"]
 
 
 import re
-from numbers import Number
 from functools import wraps
 from abc import abstractmethod
-from collections.abc import Callable, Collection
-
-import numpy as np
 
 from ..utils.mixins import CPEnabledTypeABC
 from ..utils.cls_prop import classproperty, abstractclassproperty
@@ -25,6 +18,10 @@ from ..utils.cls_prop import classproperty, abstractclassproperty
 
 # Base component classes
 
+# Might do the thing below as an additional class attribute that specifies what packages the component uses
+# TODO: Rework the property class and base comp classes so they are more intuitive to work with
+
+# noinspection PyMethodParameters
 class BaseComponent(CPEnabledTypeABC):
     """Interface for component objects.
 
@@ -38,10 +35,10 @@ class BaseComponent(CPEnabledTypeABC):
         self.sys = sys_obj  # System that contains object
         self.is_not_mapped = True  # Indicates if component has been ordered
         self.code_str = {"Set Up": None, "Execution": None}  # Storage for generated code string
-        self.name = sys_obj.register_component_name(self, name)  # Name of the component
-        self._input = _ComponentProperty.init("input", self.input_info)  # Inputs of the component
-        self._output = _ComponentProperty.init("output", self.output_info)  # Outputs of the component
-        self._parameter = _ComponentProperty.init("parameter", self.parameter_info)  # Parameters of the component
+
+        self._lib_deps = None  # Library dependencies for the component
+        self._create_properties()
+        self._name = sys_obj.register_component_name(self, name)  # Name of the component
 
         self.parameters.add(**parameters)  # Add any parameters that were specified in the constructor
         if not self.is_block_diagram():
@@ -52,47 +49,25 @@ class BaseComponent(CPEnabledTypeABC):
         return self.name
 
     @abstractclassproperty
-    def default_name(self):
-        """
-        Default name for a component type. It's used in the creation of its
-        name if one wasn't given.
+    def default_name(cls):
+        """Default name for a component type.
+
+        It's used to generate a name when a name is not given to the component.
         """
 
     @abstractclassproperty
-    def direct_feedthrough(self):
-        """
-        This indicates if the component is solely dependent of its input
-        components or not.
+    def direct_feedthrough(cls):
+        """Indicates if component only depends on input components.
 
-        The attribute is used for determining an order of execution for a
-        system. It only comes into question if there is a feedback loop within
-        your system. If the loop is composed of only components are direct
-        feedthrough, then that loop is considered to be an "algebraic loop". In
-        that case, the code will raise an error since solving these is not yet
-        supported. Otherwise, if there is a component that is not this in the
-        loop, then the loop can be resolved.
+        This is used for determining the execution order of a block diagram.
+        If there's a feedback loop in your system with only direct feedthrough
+        components, then that loop is considered to be an "algebraic loop". These
+        loops raise an error if encountered.
         """
 
     @abstractclassproperty
-    def input_info(self):
-        """
-        A 2-tuple (or NoneType) that indicates a component's required inputs
-        and all its available inputs.
-        """
-
-    @abstractclassproperty
-    def output_info(self):
-        """
-        A 2-tuple (or NoneType) that indicates a component's required outputs
-        and all its available outputs.
-        """
-
-    @abstractclassproperty
-    def parameter_info(self):
-        """
-        A 2-tuple (or NoneType) that indicates a component's required
-        parameters and all its available parameters.
-        """
+    def prop_info(cls):
+        """Attribute that lists all the information for the component properties."""
 
     @abstractmethod
     def generate_code_string(self):
@@ -102,19 +77,42 @@ class BaseComponent(CPEnabledTypeABC):
     def inputs(self):  # TODO: Elaborate more on how inputs work
         """Inputs for the component."""
 
-        return self._input
+        return self._inputs
+
+    @property
+    def name(self):
+        """Name of the component"""
+
+        return self._name
+
+    @name.setter
+    def name(self, _):
+        raise ValueError("You cannot change a component's name after it has been set")
+
+    @property
+    def lib_deps(self):
+        """Attribute that states the library dependencies for the component.
+
+        Note: This attribute must be set before one calls the setup method
+        in the build method in the BlockDiagram component since that's were
+        the imports are passed to the component, so the code can be generated
+        correctly. This means that this attribute should be either set in the
+        component's verify_properties method or in its constructor.
+        """
+
+        return self._lib_deps
 
     @property
     def outputs(self):  # TODO: Elaborate more on how outputs work
         """Outputs for the component."""
 
-        return self._output
+        return self._outputs
 
     @property
     def parameters(self):  # TODO: Elaborate more on how parameters work
         """Parameters used for calculations in the system."""
 
-        return self._parameter
+        return self._parameters
 
     def is_block_diagram(self):
         """Verifies if component is a block diagram component."""
@@ -157,8 +155,9 @@ class BaseComponent(CPEnabledTypeABC):
         it will skip the value passing process.
         """
 
-        if self.parameter_info is not None and isinstance(self.parameter_info[1], dict):
-            req_parameters, all_parameters = self.parameter_info
+        parameter_info = self.prop_info["parameters"]
+        if parameter_info is not None and isinstance(parameter_info[1], dict):
+            req_parameters, all_parameters = parameter_info
 
             # Get the non-required parameters that were not initialized with a value
             non_init_parameters = {}
@@ -169,8 +168,7 @@ class BaseComponent(CPEnabledTypeABC):
             self.parameters.update(update_dict=non_init_parameters)
 
     def verify_properties(self):
-        """Verify if the component's properties are well-defined for a
-        component.
+        """Verify if component's properties are well-defined.
 
         By default, it will verify if the component's required properties
         from its inputs, outputs, and parameters were assigned values. If
@@ -179,12 +177,19 @@ class BaseComponent(CPEnabledTypeABC):
         the component that inherits from this class.
         """
 
-        prop_names = ["inputs", "outputs", "parameters"]
-        prop_infos = [self.input_info, self.output_info, self.parameter_info]
-
-        for prop_name, prop_info in zip(prop_names, prop_infos):
+        for prop_name, prop_info in self.prop_info.items():
             if prop_info is not None:
                 self._verify_required_values(prop_name, prop_info)
+
+    def _create_properties(self):
+        """Create input, output, and parameter component properties."""
+
+        for prop_name, prop_info in self.prop_info.items():
+            setattr(self, "_" + prop_name, _ComponentProperty.init(prop_name, prop_info))
+
+    def _gather_imports(self):
+
+        self.sys.pass_imports(self.lib_deps)
 
     def _verify_required_values(self, prop_name, prop_info):
 
@@ -223,48 +228,9 @@ def _persistent_classprop_factory(name, types):
 # Attribute factories
 # These functions will generate the corresponding attribute (while ensuring it has the correct type for the attribute)
 
+generate_prop_info = _persistent_classprop_factory("prop_info", dict)
 generate_default_name = _persistent_classprop_factory("default_name", str)
 generate_direct_feedthrough = _persistent_classprop_factory("direct_feedthrough", bool)
-generate_input_info = _persistent_classprop_factory("input_info", (tuple, type(None)))
-generate_output_info = _persistent_classprop_factory("output_info", (tuple, type(None)))
-generate_parameter_info = _persistent_classprop_factory("parameter_info", (tuple, type(None)))
-
-
-class BaseNormalComponent(BaseComponent):
-    """Interface for "normal" component objects.
-
-    "Normal" components are components that are not system components, so
-    these cannot store items inside of them. In addition to this, these
-    components have the following restrictions:
-
-    - Their output property cannot be modified. That is, you cannot add
-      items to their output. This is only reserved for system components.
-
-    All of these restrictions are present in this base class, so you do not
-    need to recreate them if you inherit from this class.
-    """
-
-    output_info = generate_output_info(({}, {}))
-
-    @abstractclassproperty
-    def default_name(self):
-        pass
-
-    @abstractclassproperty
-    def direct_feedthrough(self):
-        pass
-
-    @abstractclassproperty
-    def input_info(self):
-        pass
-
-    @abstractclassproperty
-    def parameter_info(self):
-        pass
-
-    @abstractmethod
-    def generate_code_string(self):
-        pass
 
 
 # ComponentProperty definition and helper decorators
@@ -404,9 +370,9 @@ class _ComponentProperty(dict):
       values.
     """
 
-    _ALLOWED_TYPES = {"input": (BaseComponent, type(None)),
-                      "output": (BaseComponent, type(None)),
-                      "parameter": (Number, Callable, Collection, np.generic, np.ndarray, type(None))}
+    _ALLOWED_TYPES = {"inputs": (BaseComponent, type(None)),
+                      "outputs": (BaseComponent, type(None)),
+                      "parameters": object}
 
     # Component property initialization
 
@@ -548,7 +514,7 @@ class _ComponentProperty(dict):
         "prop", then for every i, j such that k > i > j, "prop_j" will appear before
         "prop_i" in the resulting list.
 
-        For example, if k = 4, then ["prop_1", "prop_2", "prop_3"] is the resulting list.
+        For example, if k = 4, then [prop_1, prop_2, prop_3] is the resulting list.
         """
 
         if self.is_order_invariant:
@@ -562,7 +528,7 @@ class _ComponentProperty(dict):
         if isinstance(update_dict, dict):
             self._update(update_dict)
         elif not isinstance(update_dict, type(None)):
-            raise TypeError('The argument "kwargs" must be a dictionary.')
+            raise TypeError('The argument "inputs" must be a dictionary.')
 
         self._update(kwargs)
 

@@ -20,28 +20,20 @@ class BaseSystem(BaseComponent):
 
         self.comps = []  # List with components within the system
         self.diagram = sys_obj.diagram  # Pass reference to diagram to current system
-        self.builder = self.diagram.runner.Builder()  # Define a builder object for the system
+        self.organizer = self.diagram.runner.Organizer()  # Define a organizer object for the system
 
         super().__init__(sys_obj, name, **parameters)
 
     @abstractclassproperty
-    def default_name(self):
+    def default_name(cls):
         pass
 
     @abstractclassproperty
-    def direct_feedthrough(self):
+    def direct_feedthrough(cls):
         pass
 
     @abstractclassproperty
-    def input_info(self):
-        pass
-
-    @abstractclassproperty
-    def output_info(self):
-        pass
-
-    @abstractclassproperty
-    def parameter_info(self):
+    def prop_info(cls):
         pass
 
     def clear(self):
@@ -68,18 +60,12 @@ class BaseSystem(BaseComponent):
         so it can also organize the components within the subsystem.
         """
 
-        self.builder.define_sys_info(self.comps)
+        self.organizer.define_sys_info(self.comps)
         for comp in self.comps:
             if comp.is_not_mapped:
-                self.builder.build_system_order(comp)
+                self.organizer.build_system_order(comp)
             if comp.is_system():
                 comp.organize()
-
-    def pass_default_parameters(self):
-
-        super().pass_default_parameters()
-        for comp in self.comps:
-            comp.pass_default_parameters()
 
     def search_component_name(self, name: str) -> set:
         """Return a set of components that match the given name."""
@@ -91,6 +77,14 @@ class BaseSystem(BaseComponent):
             if comp.is_system():  # Get component that match the names from subsystem
                 comps_with_name.extend(comp.search_component_name(name))  # Get components from subsystems
         return set(comps_with_name)  # Removes duplicates
+
+    def setup(self):
+
+        for comp in self.comps:
+            if comp.is_system():
+                comp.setup()
+            comp.pass_default_parameters()
+            self.diagram.pass_imports(comp.lib_deps)
 
     def unregister_all_components(self):
         """Unregister all component names in the system from name registry."""
@@ -143,21 +137,13 @@ class BaseSubsystem(BaseSystem):
         """
 
     @abstractclassproperty
-    def default_name(self):
+    def default_name(cls):
         pass
 
     @abstractclassproperty
-    def direct_feedthrough(self):
+    def direct_feedthrough(cls):
         pass
 
     @abstractclassproperty
-    def input_info(self):
-        pass
-
-    @abstractclassproperty
-    def output_info(self):
-        pass
-
-    @abstractclassproperty
-    def parameter_info(self):
+    def prop_info(cls):
         pass

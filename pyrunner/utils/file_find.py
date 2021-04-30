@@ -8,7 +8,9 @@ from glob import glob
 # TODO: find_module might change in what it needs to find if I make this into an official package
 
 def find_module(module_name, package):
-    """Get module object from within pyrunner source."""
+    """Get module object from within pyrunner source.
+
+    It returns the module object along with its name."""
 
     pyrunner_path = get_pyrunner_src_path()
 
@@ -16,7 +18,7 @@ def find_module(module_name, package):
     for module in modules:
         if module_name in module:
             module = os.path.basename(module).replace(".py", "")
-            return importlib.import_module(f"pyrunner.pyrunner.{package}.{module}")
+            return importlib.import_module(f"pyrunner.pyrunner.{package}.{module}"), module
     raise ModuleNotFoundError(f"No runner could be found using the name {module_name}")
 
 

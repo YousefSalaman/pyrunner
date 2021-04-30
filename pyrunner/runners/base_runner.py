@@ -1,50 +1,105 @@
 
-__all__ = ["BaseRunner",
-           "BaseBuilder"]
+__all__ = ["BaseBuilder",
+           "BaseExecutor",
+           "BaseOrganizer"]
 
 
-from abc import abstractmethod
+import os
+import re
+from abc import abstractmethod, ABC
 
+from . import executors
 from ..utils.type_abc import TypeABC
 
 
-# TODO: Remove the group key from runner to simplify code
-class BaseRunner(TypeABC):
-    """A base class for runner objects."""
+class BaseExecutor(TypeABC):
+    """Base class for executor objects."""
 
-    _runner_instances = {}  # Dictionary to store runner instances
+    def __init__(self, name: str, evaluators):
 
-    def __init__(self, group_key, group_func_lists, group_vars, group_trans=None):
+        self.evaluators = evaluators  # Object(s) that are used to run the system
 
-        self.group_key = group_key  # String/key to identify system
-        self.group_vars = group_vars  # Dictionary for variables
-        self.group_trans = group_trans  # Dictionary for system translators
-        self.group_func_lists = group_func_lists  # List containing the functions/process to runs the system.
-
-        self._runner_instances[group_key] = self  # Save instance
-
-    @classmethod
-    def run_system(cls, group_key, sys_name, **kwargs):
-        """Evaluates stored functions and returns relevant values."""
-
-        runner = cls._runner_instances[group_key]
-        return runner._run_system_private(group_key, sys_name, kwargs)
+        executors.add(name, self)  # Store executor
 
     @abstractmethod
-    def _run_system_private(self, group_key, sys_name, kwargs):
+    def run(self, inputs=None) -> dict:
         pass
 
-    def _extract_data_from_system_variables(self, sys_name):
 
-        if self.group_trans is not None:
-            curr_sys_vars = self.group_vars[sys_name]  # Current system shared variables
-            curr_sys_trans = self.group_trans[sys_name]  # Current system transitions
-            return {curr_sys_trans[key]: value for key, value in curr_sys_vars.items() if key in curr_sys_trans}
-        return None
+class BaseBuilder(ABC):
+
+    def __init__(self):
+
+        self.inits = None  # Attribute to store initialization code
+        self.processes = None  # Attribute to store process code
+
+    @classmethod
+    def create_code(cls, diagrams, dir_path=None, file_name=None):
+
+        # Get all the essential code parts from the diagrams
+        imports = ""
+        builders = set()
+        all_imports = set()
+        for diagram in diagrams:
+            builder = cls()
+            builders.add(builder)
+            builder.gather_code_parts(diagram)
+            imports = cls._create_imports(diagram, all_imports)
+
+        # Create code based on the parts gathered above
+        code = cls.merge_code_parts(imports, builders)
+        if dir_path is None or file_name is None:
+            print(code)
+        else:
+            cls._create_script(dir_path, file_name, code)
+
+    @abstractmethod
+    def gather_code_parts(self, diagram):
+        """Gather initializations and processes from the components in diagram.
+
+        Note: This has to be ran separately from the create code method, which
+        uses the results of this part to merge and create the file script.
+        """
+
+    @classmethod
+    @abstractmethod
+    def merge_code_parts(cls, imports: str, builders: set) -> str:
+        """Merge imports, initialization, and processes from all diagrams into one string."""
+
+    @staticmethod
+    def _create_imports(diagram, all_imports: set):
+
+        imports = ""
+        for lib_name, alt_name in diagram.lib_deps.items():
+            if lib_name not in all_imports:
+                all_imports.add(lib_name)
+                imports += "import " + lib_name
+                if alt_name is not None:
+                    imports += " as " + alt_name
+                imports += "\n"
+
+        return imports
+
+    @staticmethod
+    def _create_script(dir_path, name, code):
+
+        if not os.path.isdir(dir_path):
+            raise NotADirectoryError("The path that was given is not a valid directory")
+        if re.match("^[_a-zA-Z0-9]+\.[a-z]*$", name):
+            raise NameError("The file name must not contain the file extension")
+
+        # Create script with the generated code
+        with open(os.path.join(dir_path, name + ".py"), mode="w") as script:
+            script.write(code)
+
+    @staticmethod
+    @abstractmethod
+    def _generate_executor_str(diagram):
+        """Generate the line that initializes the executor."""
 
 
-class BaseBuilder(TypeABC):
-    """Base class for builder objects"""
+class BaseOrganizer(TypeABC):
+    """Base class for organizer objects"""
 
     def __init__(self):
 
@@ -59,10 +114,10 @@ class BaseBuilder(TypeABC):
         execution based on the criteria established by this method.
         """
 
-    def define_sys_info(self, sys_comps):
+    def define_sys_info(self, comps):
         """
         Create a dictionary to hold relevant information of each component of
-        the system. This is used to define some attributes of the builder
+        the system. This is used to define some attributes of the organizer
         object for code generation.
 
         Sys info is a dictionary with the following structure:
@@ -88,7 +143,10 @@ class BaseBuilder(TypeABC):
         this method, update the resulting dictionary, and return it.
         """
 
-        self.sys_info = {comp: {'inputs': list(set(comp.inputs.values()))} for comp in sys_comps}
+        sys_info = {}
+        for comp in comps:
+            sys_info[comp] = {'inputs': [value for value in comp.inputs.values() if value is not None]}
+        self.sys_info = sys_info
 
     def build_system_order(self, comp):
 
