@@ -93,6 +93,31 @@ class BaseComponent(CPEnabledTypeABC):
     def lib_deps(self):
         """Attribute that states the library dependencies for the component.
 
+        This is a dictionary with the following structure:
+
+        {
+        ...
+        package_name_i: alternate_name_i,
+        ...
+        }
+
+        where package_name_i is a string and alternate_name_i can be either
+        a string or a None object.
+
+        The code will write this as:
+
+        ...
+        import package_name_i as alternate_name_i
+        ...
+
+        Alternatively, if alternate_name_i is None, then the code will be the
+        following:
+
+        ...
+        import package_name_i
+        ...
+
+
         Note: This attribute must be set before one calls the setup method
         in the build method in the BlockDiagram component since that's were
         the imports are passed to the component, so the code can be generated
@@ -387,6 +412,10 @@ class _ComponentProperty(dict):
             self.is_order_invariant = False
 
         super().__init__(new_dict)
+
+        # Verify if prop name is a valid property
+        if prop_name not in self._ALLOWED_TYPES:
+            raise NameError(f"'{prop_name}' is not a valid component property.")
 
     @_block_outside_modification
     @_non_erasable_order_dependent_method

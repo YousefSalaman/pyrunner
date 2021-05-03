@@ -7,11 +7,17 @@ objects. Runners are composed of three parts:
     - Organizer: This object contains the instructions of how to organize
       each component of a diagram.
 
-    - Organizer: This object contains the instructions of how to build the
+    - Builder: This object contains the instructions of how to build the
       set of functions based on the connections of the system.
 
     - Executer: This object contains the instructions of how to run the
       set of functions based on the connections of the system. This is
       the object that will be returned for users to run.
 """
+
+__all__ = ["executors",
+           "base_runner"]
+
+
+from . import executors, base_runner
 
