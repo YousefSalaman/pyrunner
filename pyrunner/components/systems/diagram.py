@@ -99,7 +99,7 @@ class BlockDiagram(BaseSystem):
         # TODO: Change this when I make the setup file and make this into an official package
         self._lib_deps = {f"pyrunner.pyrunner.runners.{self.runner_name}": self.runner_name}
 
-    def build(self, dir_path=None, file_name=None, generate_script=True):
+    def build(self, dir_path: str = None, file_name: str = None, generate_script=True):
         """Builds up the BlockDiagram object.
 
         This method will do the following to accomplish this:
@@ -124,7 +124,7 @@ class BlockDiagram(BaseSystem):
             self.runner.Builder.create_code([self], dir_path, file_name)
 
     @classmethod
-    def build_diagrams(cls, dir_path, file_name):
+    def build_diagrams(cls, dir_path: str, file_name: str):
         """Build all BlockDiagram objects within a script."""
 
         runner = None

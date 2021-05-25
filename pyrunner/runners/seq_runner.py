@@ -1,5 +1,5 @@
 
-from collections.abc import Generator
+from typing import Generator, List
 
 from . import base_runner
 
@@ -30,9 +30,9 @@ class Builder(base_runner.BaseBuilder):
 
         for comp in system.organizer.ordered_comps:
             if comp.code_str["Set Up"] is not None:  # Build Set Up
-                self.inits += "\n\t" + comp.code_str['Set Up']
+                self.inits += "\n\t" + comp.code_str['Set Up'].replace('\t', '\t\t')
             if comp.code_str["Execution"] is not None:  # Build process
-                self.processes += '\n\t\t' + comp.code_str['Execution']
+                self.processes += '\n\t\t' + comp.code_str['Execution'].replace('\t', '\t\t')
             if comp.is_system():  # Get code from subsystem
                 self._merge_component_code(comp)
 
@@ -49,23 +49,23 @@ class Builder(base_runner.BaseBuilder):
         if len(diagram.inputs) != 0:
             yield_str = ', '.join(input_.name for input_ in diagram.inputs.sort()) + ' = ' + yield_str
         if enable_output and len(diagram.outputs) != 0:
-            yield_str += ', '.join(output.name for output in diagram.outputs.sort())
+            yield_str += '{' + ', '.join(f'"{output.name}": {output.name}' for output in diagram.outputs.sort()) + '}'
         return yield_str
 
 
 class Executor(base_runner.BaseExecutor):
 
-    def __init__(self, name: str, evaluators: Generator, input_order):
+    def __init__(self, name: str, evaluators: Generator, input_order: List):
 
         super().__init__(name, evaluators)
 
         next(self.evaluators)  # Initialize system
         self.input_order = input_order  # Order in which the inputs are entered in the system
 
-    def run(self, inputs=None):
+    def run(self, inputs: dict = None):
 
-        if inputs is None:
-            return self.evaluators.send()
+        if inputs is None:  # This is for systems that do not have any inputs
+            return self.evaluators.send(None)
         sys_inputs = [inputs[var] for var in self.input_order]  # Pass inputs in the order the system requires it
         return self.evaluators.send(sys_inputs)
 

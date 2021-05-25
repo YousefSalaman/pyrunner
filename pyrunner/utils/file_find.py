@@ -5,6 +5,7 @@ import importlib
 from glob import glob
 
 
+# TODO: Take a look at the importlib library since this might already do what you're doing here more efficiently
 # TODO: find_module might change in what it needs to find if I make this into an official package
 
 def find_module(module_name, package):

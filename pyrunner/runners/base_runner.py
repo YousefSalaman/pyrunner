@@ -22,7 +22,7 @@ class BaseExecutor(TypeABC):
         executors.add(name, self)  # Store executor
 
     @abstractmethod
-    def run(self, inputs=None) -> dict:
+    def run(self, inputs: dict = None) -> dict:
         pass
 
 

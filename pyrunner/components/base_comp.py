@@ -9,8 +9,8 @@ __all__ = ["BaseComponent",
 
 
 import re
-from functools import wraps
 from abc import abstractmethod
+from functools import wraps, lru_cache
 
 from ..utils.mixins import CPEnabledTypeABC
 from ..utils.cls_prop import classproperty, abstractclassproperty
@@ -21,13 +21,18 @@ from ..utils.cls_prop import classproperty, abstractclassproperty
 # Might do the thing below as an additional class attribute that specifies what packages the component uses
 # TODO: Rework the property class and base comp classes so they are more intuitive to work with
 
-# noinspection PyMethodParameters
 class BaseComponent(CPEnabledTypeABC):
     """Interface for component objects.
 
     All of the necessary component behavior is defined in this class. If you
     want to create a custom component, you only need to inherit and override
     the abstract methods.
+
+    Note: For a component, it is important that you specify what libraries it
+    uses through its _lib_deps attribute. If this is not specified and the
+    component uses a third-party library, then the code will not generate the
+    required import statement and the generated code will raise an error
+    related to this.
     """
 
     def __init__(self, sys_obj, name=None, **parameters):
@@ -139,11 +144,13 @@ class BaseComponent(CPEnabledTypeABC):
 
         return self._parameters
 
+    @lru_cache()
     def is_block_diagram(self):
         """Verifies if component is a block diagram component."""
 
         return self.sys is self
 
+    @lru_cache()
     def is_system(self):
         """Verifies if component is a system component."""
 
