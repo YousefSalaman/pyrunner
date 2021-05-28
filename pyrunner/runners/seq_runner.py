@@ -1,6 +1,4 @@
 
-from typing import Generator, List
-
 from . import base_runner
 
 
@@ -12,14 +10,14 @@ class Builder(base_runner.BaseBuilder):
         self.processes = ""
 
         self.processes += "\n\t" "while True:"
-        self.inits += "\n\n" f"def {diagram.name}():"
+        self.inits += "\n\n" "def {}():".format(diagram.name)
         self._merge_component_code(diagram)
 
         self.inits += '\n\t' + self.build_yield(diagram, enable_output=False)
         self.processes += '\n\t\t' + self.build_yield(diagram) + self._generate_executor_str(diagram)
 
     @classmethod
-    def merge_code_parts(cls, imports: str, builders: set) -> str:
+    def merge_code_parts(cls, imports, builders):
 
         code = imports
         for builder in builders:
@@ -39,8 +37,8 @@ class Builder(base_runner.BaseBuilder):
     @staticmethod
     def _generate_executor_str(diagram):
 
-        return '\n\n\n' + f'{diagram.name}_exec = {diagram.runner_name}.Executor("{diagram.name}", ' \
-                        f'{diagram.name}(), {[str(comp) for comp in diagram.inputs.sort()]})'
+        return '\n\n\n' + '{0}_exec = {1}.Executor("{0}", {0}(), '.format(diagram.name, diagram.runner_name) + \
+                        str([str(comp) for comp in diagram.inputs.sort()]) + ')'
 
     @staticmethod
     def build_yield(diagram, enable_output=True):
@@ -49,20 +47,20 @@ class Builder(base_runner.BaseBuilder):
         if len(diagram.inputs) != 0:
             yield_str = ', '.join(input_.name for input_ in diagram.inputs.sort()) + ' = ' + yield_str
         if enable_output and len(diagram.outputs) != 0:
-            yield_str += '{' + ', '.join(f'"{output.name}": {output.name}' for output in diagram.outputs.sort()) + '}'
+            yield_str += '{' + ', '.join('"{0}": {0}'.format(output.name) for output in diagram.outputs.sort()) + '}'
         return yield_str
 
 
 class Executor(base_runner.BaseExecutor):
 
-    def __init__(self, name: str, evaluators: Generator, input_order: List):
+    def __init__(self, name, evaluators, input_order):
 
-        super().__init__(name, evaluators)
+        super(Executor).__init__(name, evaluators)
 
         next(self.evaluators)  # Initialize system
         self.input_order = input_order  # Order in which the inputs are entered in the system
 
-    def run(self, inputs: dict = None):
+    def run(self, inputs=None):
 
         if inputs is None:  # This is for systems that do not have any inputs
             return self.evaluators.send(None)

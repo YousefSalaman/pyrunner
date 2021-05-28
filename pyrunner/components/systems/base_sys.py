@@ -120,7 +120,7 @@ class BaseSystem(BaseComponent):
 
 
 class BaseSubsystem(BaseSystem):
-    """Base class for subsystem components, i.e. systems within a block diagram"""
+    """Base class for systems within a block diagram."""
 
     def __init__(self, sys_obj, name=None, **parameters):
 
@@ -130,10 +130,13 @@ class BaseSubsystem(BaseSystem):
 
     @abstractmethod
     def _create_components(self):
-        """Create the components stored in the subsystem.
+        """Create and connect the components stored in the subsystem.
 
-        When creating the components stored in the subsystem, one
-        must put the subsystem as their system object.
+        When creating these components, one must put the subsystem as
+        their system object, so the objects can reside in the subsystem
+        instead of the block diagram object. One should specify which
+        components are the outputs of the system, so these can be used
+        as inputs for components outside of the subsystem.
         """
 
     @abstractclassproperty

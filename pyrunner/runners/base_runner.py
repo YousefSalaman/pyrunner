@@ -15,14 +15,14 @@ from ..utils.type_abc import TypeABC
 class BaseExecutor(TypeABC):
     """Base class for executor objects."""
 
-    def __init__(self, name: str, evaluators):
+    def __init__(self, name, evaluators):
 
         self.evaluators = evaluators  # Object(s) that are used to run the system
 
         executors.add(name, self)  # Store executor
 
     @abstractmethod
-    def run(self, inputs: dict = None) -> dict:
+    def run(self, inputs=None):
         pass
 
 
@@ -63,11 +63,11 @@ class BaseBuilder(ABC):
 
     @classmethod
     @abstractmethod
-    def merge_code_parts(cls, imports: str, builders: set) -> str:
+    def merge_code_parts(cls, imports, builders):
         """Merge imports, initialization, and processes from all diagrams into one string."""
 
     @staticmethod
-    def _create_imports(diagram, all_imports: set):
+    def _create_imports(diagram, all_imports):
 
         imports = ""
         for lib_name, alt_name in diagram.lib_deps.items():

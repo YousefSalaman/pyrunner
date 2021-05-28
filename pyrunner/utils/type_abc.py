@@ -24,16 +24,17 @@ from inspect import isabstract
 
 
 class TypeABCMeta(ABCMeta):
-    """
-    A metaclass to verify ABCs and their direct child classes have the same
-    types when overridden. It does this when a new class is created, so it
-    prevents the user from using the abstractmethod unless they have overridden
-    the abstractmethod with the correct class.
+    """Metaclass that verifies if an ABC's descendant classes were overriden
+    with the same types (in their methods and properties) as the original ABC.
+
+    It does this when a new class is created, so it prevents the user from using
+    the abstractmethod unless they have overridden the abstractmethod with the
+    correct type.
     """
 
     def __new__(mcls, name, bases, namespace, **kwargs):
 
-        cls = super().__new__(mcls, name, bases, namespace, **kwargs)
+        cls = super(TypeABCMeta, mcls).__new__(mcls, name, bases, namespace, **kwargs)
         abs_cls = mcls._find_ABC_from_bases(bases)  # The ABC that contains the relevant abstract methods
         if abs_cls is not None:
             mcls._verify_type_override(cls, abs_cls)
@@ -64,8 +65,8 @@ class TypeABCMeta(ABCMeta):
     def _raise_standard_abc_error(cls, abs_cls):
 
         non_overridden_methods = [method for method in abs_cls.__abstractmethods__ if cls.__dict__.get(method) is None]
-        raise TypeError(f"Can't instantiate abstract class {cls.__name__} "
-                        f"with abstract methods {', '.join(non_overridden_methods)}")
+        raise TypeError("Can't instantiate abstract class {} ".format({cls.__name__}) +
+                        "with abstract methods {}".format(', '.join(non_overridden_methods)))
 
     @staticmethod
     def _check_type_consistency(method, abs_method, abs_method_name):
@@ -74,15 +75,17 @@ class TypeABCMeta(ABCMeta):
         abs_method_type = type(abs_method)
         if all(method_type is not cls for cls in abs_method_type.__mro__ if cls is not object):
             possible_types = [cls.__name__ for cls in abs_method_type.__mro__ if cls is not object]
-            raise TypeError(f'The method "{abs_method_name}" must be '
-                            f'one of the following types: {", ".join(possible_types)}.')
+            raise TypeError('The method "{}" must be '.format(abs_method_name) +
+                            'one of the following types: {}.'.format(", ".join(possible_types)))
 
 
-class TypeABC(metaclass=TypeABCMeta):
-    """
-    A helper class for the TypeABCMeta metaclass. It enables ABCs that verify
-    if its child classes have overridden the abstractmethods with methods that
-    have the correct type just by inheriting from this class.
+class TypeABC:
+    """Helper class for the TypeABCMeta metaclass.
+
+    It enables ABCs that verify if its child classes have overridden the
+    abstractmethods with methods that have the correct type just by inheriting
+    from this class.
     """
 
     __slots__ = ()
+    __metaclass__ = TypeABCMeta
