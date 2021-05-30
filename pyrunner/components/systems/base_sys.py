@@ -22,7 +22,7 @@ class BaseSystem(BaseComponent):
         self.diagram = sys_obj.diagram  # Pass reference to diagram to current system
         self.organizer = self.diagram.runner.Organizer()  # Define a organizer object for the system
 
-        super().__init__(sys_obj, name, **parameters)
+        super(BaseSystem, self).__init__(sys_obj, name, **parameters)
 
     @abstractclassproperty
     def default_name(cls):
@@ -67,7 +67,7 @@ class BaseSystem(BaseComponent):
             if comp.is_system():
                 comp.organize()
 
-    def search_component_name(self, name: str) -> set:
+    def search_component_name(self, name):
         """Return a set of components that match the given name."""
 
         comps_with_name = []  # List of components that contain name in their name
@@ -96,15 +96,15 @@ class BaseSystem(BaseComponent):
 
     def verify_properties(self):
 
-        super().verify_properties()
+        super(BaseSystem, self).verify_properties()
         for comp in self.comps:
             comp.verify_properties()
 
-    def register_component_name(self, comp: BaseComponent, name: str):
+    def register_component_name(self, comp, name):
 
         return self.diagram.register_component_name(comp, name)
 
-    def remove_component(self, input_comp: BaseComponent):
+    def remove_component(self, input_comp):
         """Removes component from the system."""
 
         # Remove component from inputs and outputs from all components within a system
@@ -124,7 +124,7 @@ class BaseSubsystem(BaseSystem):
 
     def __init__(self, sys_obj, name=None, **parameters):
 
-        super().__init__(sys_obj, name, **parameters)
+        super(BaseSubsystem, self).__init__(sys_obj, name, **parameters)
 
         self._create_components()  # Create the components
 

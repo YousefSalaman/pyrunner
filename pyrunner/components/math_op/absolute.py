@@ -20,10 +20,10 @@ class Abs(base_comp.BaseComponent):
 
     def __init__(self, sys_obj, name=None):
 
-        super().__init__(sys_obj, name)
+        super(Abs, self).__init__(sys_obj, name)
 
         self._lib_deps = self._LIB_DEPS
 
     def generate_code_string(self):
 
-        self.code_str['Execution'] = f'{self.name} = np.abs({self.inputs["input"].name})'
+        self.code_str['Execution'] = '{} = np.abs({})'.format(self.name, self.inputs["input"].name)

@@ -1,5 +1,7 @@
 
+from .. import base_comp
 
-class Gain:
+
+class Gain(object):
 
     pass

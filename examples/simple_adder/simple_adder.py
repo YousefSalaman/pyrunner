@@ -1,28 +1,32 @@
+#!/usr/bin/env python
 
-import pathlib
+from __future__ import print_function
 
-from pyrunner import components as comps
+from pyrunner.components import *
+from pyrunner.runners import executors
 
 
-main_sys = comps.systems.BlockDiagram("main_sys", "seq")  # Initialize the BlockDiagram
+simple_adder = systems.BlockDiagram("simple_adder", "seq")  # Initialize the block diagram to hold components
 
+# Create components and store them in the block diagram
 
 # Add constant sources
-const_1 = comps.sources.Constant(main_sys, value=3.1415)
-const_2 = comps.sources.Constant(main_sys, value='np.array([1,2,3])')
-const_3 = comps.sources.Constant(main_sys, value=1)
+const_1 = sources.Constant(simple_adder, value=3.1415)
+const_2 = sources.Constant(simple_adder, value='np.array([1,2,3])')
+const_3 = sources.Constant(simple_adder, value=1)
 
 # Add the Sum blocks
-adder = comps.math_op.Sum(main_sys, comp_signs="-+")
-adder_1 = comps.math_op.Sum(main_sys, comp_signs='+--')
-adder_2 = comps.math_op.Sum(main_sys, comp_signs='-')
+adder = math_op.Sum(simple_adder, comp_signs="-+")
+adder_1 = math_op.Sum(simple_adder, comp_signs='+--')
+adder_2 = math_op.Sum(simple_adder, comp_signs='-')
 
 # Add the inputs to Sums
 adder.inputs.add(adder_1, adder_2)
 adder_1.inputs.add(const_1, const_2, const_3)
 adder_2.inputs.add(const_2)
 
-main_sys.outputs.add(adder, adder_1)  # Say the "adder" component is the run
+simple_adder.outputs.add(adder, adder_1)  # Say the "adder" component is the output of the system
 
-dir_path = str(pathlib.Path(__file__).parent)
-main_sys.build(dir_path, "adder_example")
+simple_adder.build()  # Create an executor for this system
+
+print(executors.run('simple_adder'))  # Run an iteration of our simple_adder system

@@ -1,4 +1,4 @@
-from pyrunner.pyrunner.components import *
+from pyrunner.components import *
 
 
 # Global test components definitions and set-ups

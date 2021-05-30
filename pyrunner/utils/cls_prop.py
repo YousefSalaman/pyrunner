@@ -17,7 +17,7 @@ The classes in this module are based on the following sources:
 from inspect import isclass
 
 
-class classproperty:
+class classproperty(object):
     """Data descriptor that mimics "property" objects for class attributes.
 
     This was done since Python versions earlier than 3.9 can't chain "property"
@@ -47,13 +47,13 @@ class classproperty:
         # Generate classproperty's fget, fset, and fdel
 
         def read_only_setter(*args):  # This prevents  user from changing the value
-            raise AttributeError(f'Class attribute "{name}" cannot change its value')
+            raise AttributeError('Class attribute "' + name + '" cannot change its value')
 
         def constant_getter(_):  # This will always get a constant value
             return value
 
         def read_only_deleter(_):  # This prevents a user from deleting the value
-            raise AttributeError(f'Class attribute "{name}" cannot be deleted')
+            raise AttributeError('Class attribute "' + name + '" cannot be deleted')
 
         # Define classproperty object
 
@@ -65,7 +65,7 @@ class classproperty:
         def _create_protocol_block(protocol_name):
 
             def blocker(*args):
-                raise AttributeError(f"Cannot modify class attribute's {protocol_name}")
+                raise AttributeError("Cannot modify class attribute's" + protocol_name)
 
             return blocker
 
@@ -80,7 +80,7 @@ class classproperty:
     def __get__(self, obj, cls=None):
 
         if self._fget is None:  # Verify if getter was set
-            raise AttributeError(f'No getter method has been set for classproperty "{self.name}"')
+            raise AttributeError('No getter method has been set for classproperty "' + self.name + '"')
         if cls is None:
             cls = type(obj)
         return self._fget.__get__(obj, cls)()
@@ -88,14 +88,14 @@ class classproperty:
     def __set__(self, obj, value):
 
         if self._fset is None:  # Verify if setter was set
-            raise AttributeError(f'No setter method has been set for classproperty "{self.name}"')
+            raise AttributeError('No setter method has been set for classproperty "' + self.name + '"')
         obj, cls = self._get_function_arguments(obj)
         return self._fset.__get__(obj, cls)(value)
 
     def __delete__(self, obj):
 
         if self._fdel is None:  # Verify if deleter was set
-            raise AttributeError(f'No deleter method has been set for classproperty "{self.name}"')
+            raise AttributeError('No deleter method has been set for classproperty "' + self.name + '"')
         obj, cls = self._get_function_arguments(obj)
         self._fdel.__get__(obj, cls)()
 
@@ -126,7 +126,7 @@ class classproperty:
 
         if func is not None:
             if isinstance(func, staticmethod):
-                raise TypeError(f"{func.__func__.__name__} cannot be a staticmethod")
+                raise TypeError(func.__func__.__name__ + "cannot be a staticmethod")
             if isinstance(func, classmethod):
                 return func
             return classmethod(func)
@@ -163,7 +163,7 @@ class CPEnabledMeta(type):
             obj = cls.__dict__.get(name)
             if isinstance(obj, classproperty):
                 return obj.__set__(cls, value)  # Access classproperty and return this instead to prevent overwriting it
-        return super().__setattr__(name, value)  # Set up attribute normally if not classproperty object
+        return super(CPEnabledMeta, cls).__setattr__(name, value)  # Set up attribute
 
     def __delattr__(cls, name):
 
@@ -171,16 +171,17 @@ class CPEnabledMeta(type):
             obj = cls.__dict__.get(name)
             if isinstance(obj, classproperty):
                 obj.__delete__(cls)  # Access the __delete__ method for the classproperty object
-        super().__delattr__(name)  # Proceed to delete class attribute
+        super(CPEnabledMeta, cls).__delattr__(name)  # Proceed to delete class attribute
 
 
-class CPEnabled(metaclass=CPEnabledMeta):
+class CPEnabled(object):
     """
     A helper class for CPMeta that enables class properties by inheriting from
     this class directly.
     """
 
     __slots__ = ()
+    __metaclass__ = CPEnabledMeta
 
 
 class abstractclassproperty(classproperty):

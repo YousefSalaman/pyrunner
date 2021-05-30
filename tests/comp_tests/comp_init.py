@@ -1,5 +1,4 @@
-import Simupynk.Simupynk.components as comps
-from Simupynk.Simupynk.components.systems import BaseSubsystem
+import pyrunner.components as comps
 
 
 INPUT_INFO = (
@@ -33,7 +32,7 @@ class InitCompDependent(comps.BaseComponent):
     def generate_component_string(self):
 
         print("Just a test")
-        super().generate_code_string()
+        super(InitCompDependent).generate_code_string()
 
 
 class InitCompInvariant(comps.BaseComponent):
@@ -51,10 +50,10 @@ class InitCompInvariant(comps.BaseComponent):
     def generate_component_string(self):
 
         print("Just a test")
-        super().generate_code_string()
+        super(InitCompInvariant, self).generate_code_string()
 
 
-class InitCompSystem(BaseSubsystem):
+class InitCompSystem(comps.BaseSubsystem):
 
     direct_feedthrough = comps.generate_direct_feedthrough(True)
 
@@ -69,4 +68,4 @@ class InitCompSystem(BaseSubsystem):
     def generate_component_string(self):
 
         print("Just a test")
-        super().generate_code_string()
+        super(InitCompSystem, self).generate_code_string()

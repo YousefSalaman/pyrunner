@@ -1,6 +1,6 @@
 from abc import abstractmethod
-from Simupynk.Simupynk.utils.cls_prop import classproperty
-from Simupynk.Simupynk.utils.type_abc import CPEnabledTypeABCMeta, CPEnabledTypeABC, abstractclassproperty
+from pyrunner.utils.cls_prop import classproperty
+from pyrunner.utils.type_abc import CPEnabledTypeABCMeta, CPEnabledTypeABC, abstractclassproperty
 import pytest
 
 

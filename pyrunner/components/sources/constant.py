@@ -18,16 +18,16 @@ class Constant(base_comp.BaseComponent):
 
     def __init__(self, sys_obj, name=None, lib_deps=None, **parameters):
 
-        super().__init__(sys_obj, name, **parameters)
+        super(Constant, self).__init__(sys_obj, name, **parameters)
         if lib_deps is not None:
             self._lib_deps = lib_deps
 
     def generate_code_string(self):
 
-        self.code_str['Set Up'] = f'{self.name} = ' + str(self.parameters['value'])
+        self.code_str['Set Up'] = '{} = '.format(self.name) + str(self.parameters['value'])
 
     def verify_properties(self):
 
-        super().verify_properties()
+        super(Constant, self).verify_properties()
         if not isinstance(self._lib_deps, (type(None), dict)):
             raise TypeError("The argument 'lib_deps' must be a dictionary.")

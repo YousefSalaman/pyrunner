@@ -17,7 +17,7 @@ def add(name, executor_obj):
     _POOL[name] = executor_obj
 
 
-def run(name, inputs):
+def run(name, inputs=None):
     """Run an executor object/system from the executor pool."""
 
     executor = _POOL.get(name)

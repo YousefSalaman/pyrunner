@@ -3,3 +3,4 @@
 .pylint.d
 __pycache__
 pyrunner.egg-info
+*.pyc

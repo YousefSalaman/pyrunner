@@ -1,4 +1,4 @@
-from pyrunner.pyrunner.components import *
+from pyrunner.components import *
 
 if __name__ == "__main__":
     main_sys = systems.BlockDiagram("main_sys", "seq")

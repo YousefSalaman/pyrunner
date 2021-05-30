@@ -55,7 +55,7 @@ class Executor(base_runner.BaseExecutor):
 
     def __init__(self, name, evaluators, input_order):
 
-        super(Executor).__init__(name, evaluators)
+        super(Executor, self).__init__(name, evaluators)
 
         next(self.evaluators)  # Initialize system
         self.input_order = input_order  # Order in which the inputs are entered in the system

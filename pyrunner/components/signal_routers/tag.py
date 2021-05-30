@@ -54,10 +54,10 @@ class Tag(base_comp.BaseComponent):
 
     def __init__(self, sys_obj, name):
 
-        super().__init__(sys_obj, name)
+        super(Tag, self).__init__(sys_obj, name)
 
     def generate_code_string(self):
 
         input_ = self.inputs["input"]
         if input_ is not None:
-            self.code_str["Execution"] = f"{self.name} = {input_.name}"
+            self.code_str["Execution"] = "{} = {}".format(self.name, input_.name)

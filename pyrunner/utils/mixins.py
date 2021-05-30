@@ -13,10 +13,11 @@ class CPEnabledTypeABCMeta(CPEnabledMeta, TypeABCMeta):
     """
 
 
-class CPEnabledTypeABC(metaclass=CPEnabledTypeABCMeta):
+class CPEnabledTypeABC(object):
     """
     A helper class for CPEnabledTypeABCMeta that enables using classproperties
     and type checking for ABCs just by inhereting from this class directly.
     """
 
     __slots__ = ()
+    __metaclass__ = CPEnabledTypeABCMeta

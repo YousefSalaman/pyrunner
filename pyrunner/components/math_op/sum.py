@@ -6,7 +6,11 @@ This component performs the same operation as Simulink's Sum block:
 - https://www.mathworks.com/help/simulink/slref/add.html
 """
 
-from collections.abc import Sequence
+import sys
+if sys.version_info[:2] <= (2, 7):  # If Python 2.7 or lower
+    from collections import Sequence
+else:
+    from collections.abc import Sequence
 
 from .. import base_comp
 
@@ -31,7 +35,7 @@ def _generate_string_for_normal_addition(inputs, parameters):
 
 def _generate_string_for_dimension_sum(inputs, parameters):
 
-    sum_str = f"np.sum({inputs[0].name}"
+    sum_str = "np.sum({}".format(inputs[0].name)
 
     # Sum negative sign
     comp_sign = parameters["comp_signs"][0].strip()
@@ -41,12 +45,12 @@ def _generate_string_for_dimension_sum(inputs, parameters):
     # Write dimension parameter
     dim = parameters['dimension']
     if dim is not None:
-        sum_str += f",axis={dim}"
+        sum_str += ",axis={}".format(dim)
 
     # Sum dytpe parameter
     dtype = parameters['dtype']
     if dtype is not None:
-        sum_str += f",dtype=np.{dtype}"
+        sum_str += ",dtype=np.{}".format(dtype)
 
     return sum_str + ")"
 
@@ -148,13 +152,9 @@ class Sum(base_comp.BaseComponent):
         }
     )
 
-    def __init__(self, sys_obj, name=None, **parameters):
-
-        super().__init__(sys_obj, name, **parameters)
-
     def generate_code_string(self):
 
-        start_str = f"{self.name} = "
+        start_str = self.name + " = "
         inputs = self.inputs.sort()
 
         if len(inputs) == 1:
@@ -166,7 +166,7 @@ class Sum(base_comp.BaseComponent):
 
     def verify_properties(self):
 
-        super().verify_properties()
+        super(Sum, self).verify_properties()
 
         input_len = len(self.inputs)
         _verify_comp_signs(self.parameters["comp_signs"], input_len)

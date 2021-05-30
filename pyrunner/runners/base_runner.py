@@ -6,7 +6,7 @@ __all__ = ["BaseBuilder",
 
 import os
 import re
-from abc import abstractmethod, ABC
+from abc import abstractmethod
 
 from . import executors
 from ..utils.type_abc import TypeABC
@@ -26,7 +26,7 @@ class BaseExecutor(TypeABC):
         pass
 
 
-class BaseBuilder(ABC):
+class BaseBuilder(TypeABC):
 
     def __init__(self):
 
@@ -49,7 +49,7 @@ class BaseBuilder(ABC):
         # Create code based on the parts gathered above
         code = cls.merge_code_parts(imports, builders)
         if dir_path is None or file_name is None:
-            print(code)
+            exec(code, globals())
         else:
             cls._create_script(dir_path, file_name, code)
 

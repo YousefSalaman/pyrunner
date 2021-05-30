@@ -1,4 +1,4 @@
-import pyrunner.pyrunner.runners.seq_runner as seq_runner
+import pyrunner.runners.seq_runner as seq_runner
 import numpy as np
 
 

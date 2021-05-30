@@ -1,7 +1,7 @@
 import pytest
 
-from Simupynk.Simupynk.components import *
-from Simupynk.tests.comp_tests.comp_init import InitCompDependent, InitCompInvariant
+from pyrunner.components import *
+from pyrunner.tests.comp_tests.comp_init import InitCompDependent, InitCompInvariant
 
 
 sys_obj = systems.BlockDiagram("System1", "seq")

@@ -1,4 +1,4 @@
-from Simupynk.Simupynk.utils.cls_prop import classproperty, CPEnabled, CPEnabledMeta
+from pyrunner.utils.cls_prop import classproperty, CPEnabled, CPEnabledMeta
 import pytest
 
 

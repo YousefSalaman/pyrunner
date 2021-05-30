@@ -22,7 +22,7 @@ def _shiftmethod(func):
     """
 
     @wraps(func)
-    def method_wrapper(diagram, comp: BaseComponent, comp_name=None):
+    def method_wrapper(diagram, comp, comp_name=None):
 
         # Get component attributes
         if comp_name is None:
@@ -81,7 +81,7 @@ class BlockDiagram(BaseSystem):
         }
     )
 
-    def __init__(self, name: str, runner_name: str):
+    def __init__(self, name, runner_name):
 
         try:
             self.diagram = self  # State you're the diagram for your subsystems
@@ -92,14 +92,13 @@ class BlockDiagram(BaseSystem):
             self._DIAGRAMS.append(self)  # Register diagram in class
 
         except TypeError as e:
-            raise TypeError("The arguments name and runner_name must be strings") from e
+            raise TypeError("The arguments name and runner_name must be strings")(e)
 
-        super().__init__(self, name)
+        super(BlockDiagram, self).__init__(self, name)
 
-        # TODO: Change this when I make the setup file and make this into an official package
-        self._lib_deps = {f"pyrunner.pyrunner.runners.{self.runner_name}": self.runner_name}
+        self._lib_deps = {"pyrunner.runners.{}".format(self.runner_name): self.runner_name}
 
-    def build(self, dir_path: str = None, file_name: str = None, generate_script=True):
+    def build(self, dir_path=None, file_name=None):
         """Builds up the BlockDiagram object.
 
         This method will do the following to accomplish this:
@@ -120,11 +119,10 @@ class BlockDiagram(BaseSystem):
         self.setup()
         self.organize()
         self.generate_code_string()
-        if generate_script:
-            self.runner.Builder.create_code([self], dir_path, file_name)
+        self.runner.Builder.create_code([self], dir_path, file_name)
 
     @classmethod
-    def build_diagrams(cls, dir_path: str, file_name: str):
+    def build_diagrams(cls, dir_path, file_name):
         """Build all BlockDiagram objects within a script."""
 
         runner = None
@@ -158,7 +156,7 @@ class BlockDiagram(BaseSystem):
         if lib_deps is not None:
             self._lib_deps.update(lib_deps)
 
-    def register_component_name(self, comp: BaseComponent, name: str) -> str:
+    def register_component_name(self, comp, name):
         """Remove component's name from the name registry.
 
         When registering a name, the system will do one of two things:
@@ -180,7 +178,7 @@ class BlockDiagram(BaseSystem):
             self._shift_component_names_right(comp, name)
         return name
 
-    def remove_components(self, *comps: BaseComponent):
+    def remove_components(self, *comps):
         """Remove a collection of components from the system.
 
         The component(s) can directly be in the BlockDiagram object or they can
@@ -191,7 +189,7 @@ class BlockDiagram(BaseSystem):
             self.unregister_component_name(comp)
             self.remove_component(comp)
 
-    def unregister_component_name(self, comp: BaseComponent):
+    def unregister_component_name(self, comp):
         """Unregister a component from the block diagram's name registry.
 
         After unregistering the component's name, the code will verify if the
@@ -265,7 +263,7 @@ class _NameManager:
         self._registry = {}  # Name registry for a BlockDiagram object
 
     @staticmethod
-    def get_name_attrs(name: str):
+    def get_name_attrs(name):
         """Get a name's basename and index."""
 
         try:
@@ -277,7 +275,7 @@ class _NameManager:
 
         return basename, name_index
 
-    def get_name_count(self, name: str) -> int:
+    def get_name_count(self, name):
         """Get the amount of times a name has been registered.
 
         Returns 0 if the given name is not found in the name registry.
@@ -290,12 +288,12 @@ class _NameManager:
             return self._registry[basename]
         return 0
 
-    def is_name_registered(self, name: str) -> bool:
+    def is_name_registered(self, name):
         """Verify if name is registered in the name registry."""
 
         return self._is_explicitly_registered(name) or self._is_implicitly_registered(name)
 
-    def register_custom_name(self, name: str) -> str:
+    def register_custom_name(self, name):
         """Register a custom name.
 
         Three things can happen when using this method:
@@ -313,7 +311,7 @@ class _NameManager:
 
         if re.search("(_[1-9][0-9]*)+$", name):  # Verify if name has indexed format
             if self._is_explicitly_registered(name):
-                raise NameError(f"{name} is already registered and no duplicate indexed names"
+                raise NameError("{} is already registered and no duplicate indexed names".format(name) +
                                 " are allowed in the name registry.")
             if self._is_implicitly_registered(name):
                 basename, _ = self.get_name_attrs(name)
@@ -322,7 +320,7 @@ class _NameManager:
 
         return self.register_name(name)  # Otherwise, explicitly register name
 
-    def register_name(self, name: str) -> str:
+    def register_name(self, name):
         """Register a name explicitly or implicitly.
 
         In case a name that is implicitly registered, but the new generated
@@ -345,7 +343,7 @@ class _NameManager:
         self._registry[name] = 1
         return name
 
-    def unregister_name(self, name: str):
+    def unregister_name(self, name):
         """Unregister a component name from the name registry.
 
         Three things can happen when using this method:
@@ -367,7 +365,7 @@ class _NameManager:
             basename, _ = self.get_name_attrs(name)
             self._registry[basename] -= 1
 
-    def _is_explicitly_registered(self, name: str) -> bool:
+    def _is_explicitly_registered(self, name):
         """Verify if name is explicitly registered in the name registry.
 
         This only happens if the given name appears as a key in the registry.
@@ -375,7 +373,7 @@ class _NameManager:
 
         return name in self._registry
 
-    def _is_implicitly_registered(self, name: str) -> bool:
+    def _is_implicitly_registered(self, name):
         """Verify if name is implicitly registered in the name registry.
 
         This is done by checking if the basename is in the registry and if the
