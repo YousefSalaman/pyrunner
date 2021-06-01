@@ -91,14 +91,14 @@ class BlockDiagram(BaseSystem):
 
             self._DIAGRAMS.append(self)  # Register diagram in class
 
-        except TypeError as e:
-            raise TypeError("The arguments name and runner_name must be strings")(e)
+        except TypeError:
+            raise TypeError("The arguments 'name' and 'runner_name' must be strings")
 
         super(BlockDiagram, self).__init__(self, name)
 
         self._lib_deps = {"pyrunner.runners.{}".format(self.runner_name): self.runner_name}
 
-    def build(self, dir_path=None, file_name=None):
+    def build(self, file_path=None, create_code=True):
         """Builds up the BlockDiagram object.
 
         This method will do the following to accomplish this:
@@ -119,21 +119,23 @@ class BlockDiagram(BaseSystem):
         self.setup()
         self.organize()
         self.generate_code_string()
-        self.runner.Builder.create_code([self], dir_path, file_name)
+        if create_code:
+            self.runner.Builder.create_code([self], file_path)
 
     @classmethod
-    def build_diagrams(cls, dir_path, file_name):
+    def build_diagrams(cls, file_path=None):
         """Build all BlockDiagram objects within a script."""
 
-        runner = None
-        for diagram in cls._DIAGRAMS:
-            diagram.build(generate_script=False, dir_path=dir_path, file_name=file_name)
-            if runner is None:
-                runner = diagram.runner
-            elif runner != diagram.runner:
-                raise TypeError("All diagrams within a script must use the same runner type.")
+        if len(cls._DIAGRAMS) == 0:
+            raise ValueError('There are no registered diagrams to build')
 
-        runner.Builder.create_code(cls._DIAGRAMS, dir_path, file_name)
+        for diagram in cls._DIAGRAMS:
+            diagram.build(file_path, create_code=False)
+
+        # It doesn't matter what Builder is used to create the final code since the method
+        # create_code will invoke each diagram's builder to create that diagram's code
+        builder = diagram.runner.Builder  # Grab the last builder (it could've any other one from the list of diagrams)
+        builder.create_code(cls._DIAGRAMS, file_path)
 
     def clear_diagram(self):
         """Remove all the components directly in the block diagram.

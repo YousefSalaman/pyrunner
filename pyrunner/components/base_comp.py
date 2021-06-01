@@ -287,9 +287,9 @@ def _detect_invalid_key_entry(func):
         self = args[0]
         try:
             func(*args)
-        except KeyError as error:
+        except KeyError:
             raise KeyError("Item could not be deleted. You either entered an invalid key " +
-                           "or the {}s are empty.".format(self.prop_name))(error)
+                           "or the {}s are empty.".format(self.prop_name))
 
     return method_wrapper
 

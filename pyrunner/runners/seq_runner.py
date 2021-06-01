@@ -4,7 +4,7 @@ from . import base_runner
 
 class Builder(base_runner.BaseBuilder):
 
-    def gather_code_parts(self, diagram):
+    def create_diagram_code(self, diagram):
 
         self.inits = ""
         self.processes = ""
@@ -16,13 +16,7 @@ class Builder(base_runner.BaseBuilder):
         self.inits += '\n\t' + self.build_yield(diagram, enable_output=False)
         self.processes += '\n\t\t' + self.build_yield(diagram) + self._generate_executor_str(diagram)
 
-    @classmethod
-    def merge_code_parts(cls, imports, builders):
-
-        code = imports
-        for builder in builders:
-            code += builder.inits + builder.processes
-        return code
+        return self.inits + self.processes + '\n\n'
 
     def _merge_component_code(self, system):
 

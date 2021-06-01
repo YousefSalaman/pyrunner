@@ -34,37 +34,32 @@ class BaseBuilder(TypeABC):
         self.processes = None  # Attribute to store process code
 
     @classmethod
-    def create_code(cls, diagrams, dir_path=None, file_name=None):
+    def create_code(cls, diagrams, file_path=None):
 
-        # Get all the essential code parts from the diagrams
-        imports = ""
-        builders = set()
-        all_imports = set()
-        for diagram in diagrams:
-            builder = cls()
-            builders.add(builder)
-            builder.gather_code_parts(diagram)
-            imports = cls._create_imports(diagram, all_imports)
-
-        # Create code based on the parts gathered above
-        code = cls.merge_code_parts(imports, builders)
-        if dir_path is None or file_name is None:
+        code = cls._create_code_string(diagrams)
+        if file_path is None:
             exec(code, globals())
         else:
-            cls._create_script(dir_path, file_name, code)
+            cls._create_script(file_path, code)
 
     @abstractmethod
-    def gather_code_parts(self, diagram):
-        """Gather initializations and processes from the components in diagram.
-
-        Note: This has to be ran separately from the create code method, which
-        uses the results of this part to merge and create the file script.
+    def create_diagram_code(self, diagram):
+        """Gather different parts from the components in diagram to create and
+        return the code.
         """
 
-    @classmethod
-    @abstractmethod
-    def merge_code_parts(cls, imports, builders):
-        """Merge imports, initialization, and processes from all diagrams into one string."""
+    @staticmethod
+    def _create_code_string(diagrams):
+
+        code = ''
+        imports = ''
+        all_imports = set()
+        for diagram in diagrams:
+            builder = diagram.runner.Builder()
+            code += builder.create_diagram_code(diagram)
+            imports += builder._create_imports(diagram, all_imports)
+
+        return imports + code
 
     @staticmethod
     def _create_imports(diagram, all_imports):
@@ -81,15 +76,16 @@ class BaseBuilder(TypeABC):
         return imports
 
     @staticmethod
-    def _create_script(dir_path, name, code):
+    def _create_script(file_path, code):
 
+        dir_path, filename = os.path.split(file_path)
         if not os.path.isdir(dir_path):
             raise NotADirectoryError("The path that was given is not a valid directory")
-        if re.match("^[_a-zA-Z0-9]+\.[a-z]*$", name):
-            raise NameError("The file name must not contain the file extension")
+        if not re.match("^[_a-zA-Z][_a-zA-Z0-9]+\.py$", filename):
+            raise NameError("The filename must be a valid python filename.")
 
         # Create script with the generated code
-        with open(os.path.join(dir_path, name + ".py"), mode="w") as script:
+        with open(file_path, mode="w") as script:
             script.write(code)
 
     @staticmethod

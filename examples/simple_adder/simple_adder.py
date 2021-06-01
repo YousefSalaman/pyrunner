@@ -2,6 +2,8 @@
 
 from __future__ import print_function
 
+import os
+
 from pyrunner.components import *
 from pyrunner.runners import executors
 
@@ -27,6 +29,15 @@ adder_2.inputs.add(const_2)
 
 simple_adder.outputs.add(adder, adder_1)  # Say the "adder" component is the output of the system
 
-simple_adder.build()  # Create an executor for this system
+# The lines below generate an executable object, called the executor, and you use it by importing
+# the executors module and running the run function (shown below)
 
+simple_adder.build()
 print(executors.run('simple_adder'))  # Run an iteration of our simple_adder system
+
+# The following creates a python script named 'adder_example.py" with the simple_adder system's
+# code. When you run this, the executable object (i.e. the executor) will be stored for later use
+# through the run method of the executor
+
+file_path = os.path.join(os.path.dirname(__file__), 'adder_example.py')
+simple_adder.build(file_path)  # Creates a file with the code
