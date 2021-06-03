@@ -13,10 +13,20 @@ class Builder(base_runner.BaseBuilder):
         self.inits += "\n\n" "def {}():".format(diagram.name)
         self._merge_component_code(diagram)
 
-        self.inits += '\n\t' + self.build_yield(diagram, enable_output=False)
-        self.processes += '\n\t\t' + self.build_yield(diagram) + self._generate_executor_str(diagram)
+        self.inits += '\n\t' + self._build_yield(diagram, enable_output=False)
+        self.processes += '\n\t\t' + self._build_yield(diagram) + self._generate_executor_str(diagram)
 
         return self.inits + self.processes + '\n\n'
+
+    @staticmethod
+    def _build_yield(diagram, enable_output=True):
+
+        yield_str = 'yield '
+        if len(diagram.inputs) != 0:
+            yield_str = ', '.join(input_.name for input_ in diagram.inputs.sort()) + ' = ' + yield_str
+        if enable_output and len(diagram.outputs) != 0:
+            yield_str += '{' + ', '.join('"{0}": {0}'.format(output.name) for output in diagram.outputs.sort()) + '}'
+        return yield_str
 
     def _merge_component_code(self, system):
 
@@ -33,16 +43,6 @@ class Builder(base_runner.BaseBuilder):
 
         return '\n\n\n' + '{0}_exec = {1}.Executor("{0}", {0}(), '.format(diagram.name, diagram.runner_name) + \
                         str([str(comp) for comp in diagram.inputs.sort()]) + ')'
-
-    @staticmethod
-    def build_yield(diagram, enable_output=True):
-
-        yield_str = 'yield '
-        if len(diagram.inputs) != 0:
-            yield_str = ', '.join(input_.name for input_ in diagram.inputs.sort()) + ' = ' + yield_str
-        if enable_output and len(diagram.outputs) != 0:
-            yield_str += '{' + ', '.join('"{0}": {0}'.format(output.name) for output in diagram.outputs.sort()) + '}'
-        return yield_str
 
 
 class Executor(base_runner.BaseExecutor):

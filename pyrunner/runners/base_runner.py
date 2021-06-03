@@ -34,11 +34,13 @@ class BaseBuilder(TypeABC):
         self.processes = None  # Attribute to store process code
 
     @classmethod
-    def create_code(cls, diagrams, file_path=None):
+    def create_code(cls, diagrams, file_path=None, namespace=None):
 
         code = cls._create_code_string(diagrams)
         if file_path is None:
-            exec(code, globals())
+            if namespace is None:
+                namespace = globals()
+            exec(code, namespace)
         else:
             cls._create_script(file_path, code)
 
@@ -80,7 +82,7 @@ class BaseBuilder(TypeABC):
 
         dir_path, filename = os.path.split(file_path)
         if not os.path.isdir(dir_path):
-            raise NotADirectoryError("The path that was given is not a valid directory")
+            raise OSError("The path that was given is not a valid directory")
         if not re.match("^[_a-zA-Z][_a-zA-Z0-9]+\.py$", filename):
             raise NameError("The filename must be a valid python filename.")
 

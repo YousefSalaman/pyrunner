@@ -210,6 +210,7 @@ class BaseComponent(CPEnabledTypeABC):
         for prop_name, prop_info in self.prop_info.items():
             if prop_info is not None:
                 self._verify_required_values(prop_name, prop_info)
+            self._verify_io_types(prop_name)
 
     def _create_properties(self):
         """Create input, output, and parameter component properties."""
@@ -220,6 +221,13 @@ class BaseComponent(CPEnabledTypeABC):
     def _gather_imports(self):
 
         self.sys.pass_imports(self.lib_deps)
+
+    def _verify_io_types(self, prop_name):
+
+        if prop_name != 'parameters':
+            prop = getattr(self, '_' + prop_name)
+            if not prop.has_correct_value_types():
+                raise TypeError('The ' + prop_name + ' have a value that is neither a component nor None.')
 
     def _verify_required_values(self, prop_name, prop_info):
 
@@ -493,6 +501,11 @@ class _ComponentProperty(dict):
             return _ComponentProperty({}, prop_name, prop_info)
         return _ComponentProperty({prop_name: None for prop_name in prop_info[1]}, prop_name, prop_info)
 
+    def has_correct_value_types(self):
+
+        allowed_types = self._ALLOWED_TYPES[self.prop_name]
+        return all(isinstance(value, allowed_types) for value in self.values())
+
     @_detect_invalid_key_entry
     def pop(self, key):
         """Remove the specified entry and return its value.
@@ -562,7 +575,7 @@ class _ComponentProperty(dict):
         if isinstance(update_dict, dict):
             self._update(update_dict)
         elif not isinstance(update_dict, type(None)):
-            raise TypeError('The argument "inputs" must be a dictionary.')
+            raise TypeError('The argument "update_dict" must be a dictionary.')
 
         self._update(kwargs)
 

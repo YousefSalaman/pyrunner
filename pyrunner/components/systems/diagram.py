@@ -2,6 +2,7 @@ __all__ = ["BlockDiagram"]
 
 
 import re
+from copy import copy
 from functools import wraps
 
 from ..base_comp import *
@@ -98,7 +99,7 @@ class BlockDiagram(BaseSystem):
 
         self._lib_deps = {"pyrunner.runners.{}".format(self.runner_name): self.runner_name}
 
-    def build(self, file_path=None, create_code=True):
+    def build(self, file_path=None, create_code=True, namespace=None):
         """Builds up the BlockDiagram object.
 
         This method will do the following to accomplish this:
@@ -120,10 +121,10 @@ class BlockDiagram(BaseSystem):
         self.organize()
         self.generate_code_string()
         if create_code:
-            self.runner.Builder.create_code([self], file_path)
+            self.runner.Builder.create_code([self], file_path, namespace)
 
     @classmethod
-    def build_diagrams(cls, file_path=None):
+    def build_diagrams(cls, file_path=None, namespace=None):
         """Build all BlockDiagram objects within a script."""
 
         if len(cls._DIAGRAMS) == 0:
@@ -135,7 +136,7 @@ class BlockDiagram(BaseSystem):
         # It doesn't matter what Builder is used to create the final code since the method
         # create_code will invoke each diagram's builder to create that diagram's code
         builder = diagram.runner.Builder  # Grab the last builder (it could've any other one from the list of diagrams)
-        builder.create_code(cls._DIAGRAMS, file_path)
+        builder.create_code(cls._DIAGRAMS, file_path, namespace)
 
     def clear_diagram(self):
         """Remove all the components directly in the block diagram.
@@ -146,7 +147,7 @@ class BlockDiagram(BaseSystem):
         registry empty.
         """
 
-        for comp in self.comps.copy():
+        for comp in copy(self.comps):
             if comp.is_system():
                 comp.unregister_all_components()
             self.unregister_component_name(comp)

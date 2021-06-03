@@ -11,7 +11,7 @@ def simple_adder():
 		add_2 = -np.sum(const_1)
 		add_1 = const-const_1-const_2
 		add = -add_1+add_2
-		yield {"add": add, "add_1": add_1}
+		yield {"add": add}
 
 
 simple_adder_exec = seq_runner.Executor("simple_adder", simple_adder(), [])

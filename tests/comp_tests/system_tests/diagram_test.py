@@ -1,4 +1,4 @@
-import pyrunner.pyrunner.components as comps
+import pyrunner.components as comps
 
 
 class TestSystem(comps.systems.BaseSubsystem):
