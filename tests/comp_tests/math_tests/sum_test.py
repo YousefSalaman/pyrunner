@@ -1,6 +1,5 @@
 from pyrunner.components import *
 
-
 # Global test components definitions and set-ups
 
 MAIN_SYS = systems.BlockDiagram("main_sys", "seq")
