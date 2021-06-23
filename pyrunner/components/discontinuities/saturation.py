@@ -8,24 +8,6 @@ This component performs the same operation as Simulink's Saturation block:
 from .. import base_comp
 
 
-# Function helpers
-
-
-def _verify_comp_limits(parameters):
-    if parameters["lower_limit"] is None and parameters["upper_limit"] is None:
-        raise AttributeError("Both Limits cannot be None. Insert a value to at least 1 limit.")
-
-    if not (parameters["lower_limit"] is None):
-        if not (parameters["out_min"] < parameters["lower_limit"] < parameters["out_max"]):
-            raise AttributeError("Lower limit must be greater than the Output minimum "
-                                 "parameter and less than the Output maximum parameter.")
-
-    if not (parameters["upper_limit"] is None):
-        if not (parameters["out_min"] < parameters["upper_limit"] < parameters["out_max"]):
-            raise AttributeError("Upper limit must be greater than the Output minimum "
-                                 "parameter and less than the Output maximum parameter.")
-
-
 class Saturation(base_comp.BaseComponent):
     """A component that produces an output signal that is the value of the input signal
     bounded to the upper and lower saturation values. For this component to work properly
@@ -54,16 +36,6 @@ class Saturation(base_comp.BaseComponent):
         than the out_max parameter. The default is none and this will simply execute
         the saturation without an upper limit.
 
-     - out_min : int
-        Lower value of the output range that Pyrunner checks.
-        NOTE: This parameter does not saturate or clip the actual output signal. Use
-        the Saturation obj instead.
-
-     - out_max : int
-        Upper value of the output range that Pyrunner checks.
-        NOTE: This parameter does not saturate or clip the actual output signal. Use
-        the Saturation obj instead.
-
     Inputs
     ------
     - Value:
@@ -87,7 +59,7 @@ class Saturation(base_comp.BaseComponent):
         {
             "inputs": ({"value"}, {"value"}),
             "outputs": ({}, {}),
-            "parameters": ({}, {"lower_limit": None, "upper_limit": None, "out_min": None, "out_max": None})
+            "parameters": ({}, {"low_lim": None, "up_lim": None})
         }
     )
 
@@ -101,11 +73,12 @@ class Saturation(base_comp.BaseComponent):
     def generate_code_string(self):
         start_str = self.name + " = "
         saturation_str = 'np.clip({},{},{})'.format(self.inputs['value'],
-                                                    self.parameters["lower_limit"],
-                                                    self.parameters["upper_limit"])
+                                                    self.parameters["low_lim"],
+                                                    self.parameters["up_lim"])
 
         self.code_str['Execution'] = start_str + saturation_str
 
     def verify_properties(self):
+        if self.parameters["low_lim"] is None and self.parameters["up_lim"] is None:
+            raise AttributeError("Both Limits cannot be None. Insert a value to at least 1 limit.")
         super(Saturation, self).verify_properties()
-        _verify_comp_limits(self.parameters)

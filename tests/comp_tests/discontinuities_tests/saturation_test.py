@@ -8,7 +8,7 @@ const = Constant(MAIN_SYS, value=[2, 43, 232, 12321, -1123, 222])
 
 
 def test_normal_saturation():
-    Saturator = Saturation(MAIN_SYS, lower_limit=0, upper_limit=100, out_min=-10, out_max=1000)
+    Saturator = Saturation(MAIN_SYS, low_lim=0, up_lim=100)
     Saturator.inputs.update({"value": const})
     MAIN_SYS.build()  # Build code to generate the strings
     print(Saturator.code_str["Execution"])
@@ -18,15 +18,6 @@ def test_normal_saturation():
 def test_saturation_errors():
     with pytest.raises(AttributeError):
         # Testing for lower_limit and upper_limit error: Both cannot be none.
-        Saturator1 = Saturation(MAIN_SYS, lower_limit=None, upper_limit=None, out_min=-0, out_max=1000)
+        Saturator1 = Saturation(MAIN_SYS, low_lim=None, up_lim=None)
         Saturator1.inputs.update({"value": const})
-
-        # Testing error that triggers if out_min is not greater than the lower_limit or the upper_limit
-        Saturator2 = Saturation(MAIN_SYS, lower_limit=0, upper_limit=100, out_min=0, out_max=1000)
-        Saturator2.inputs.update({"value": const})
-
-        # Testing error that triggers if out_max is not greater than the lower_limit or the upper_limit
-        Saturator3 = Saturation(MAIN_SYS, lower_limit=0, upper_limit=1000, out_min=-10, out_max=1000)
-        Saturator3.inputs.update({"value": const})
         MAIN_SYS.build(create_code=False)
-

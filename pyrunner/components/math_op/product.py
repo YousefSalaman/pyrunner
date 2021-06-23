@@ -12,16 +12,21 @@ from .. import base_comp
 # Function helpers
 
 
-def _generate_string_for_multiplication(inputs, parameters):
+def _generate_string_for_mult(inputs, parameters):
+    # checking that type parameter is correct
+    mult_string =  ['element', 'matrix1', 'matrix2']
+    if parameters['mult'] not in mult_string:
+        raise AttributeError('{} is not a valid mode'.format(parameters['multiplication']))
+
     code_str = ""
 
-    if parameters["multiplication"] == ("element_wise" or None):
+    if parameters["mult"] == "element":
         code_str = 'np.multiply({},{})'.format(inputs["value"], inputs["constant"])
 
-    elif parameters["multiplication"] == ("matrix_mode1" or "dot_1"):
+    elif parameters["mult"] == "matrix1":
         code_str = 'np.dot({},{})'.format(inputs["value"], inputs["constant"])
 
-    elif parameters["multiplication"] == ("matrix_mode2" or "dot_2"):
+    elif parameters["mult"] == "matrix2":
         code_str = 'np.dot({},{})'.format(inputs["constant"], inputs["value"])
 
     return code_str
@@ -41,12 +46,12 @@ class Product(base_comp.BaseComponent):
         Name of the component. The default is None and this will generate a name
         for the component since it was not given one.
 
-    - multiplication : string
+    - mult : string
         This parameter allows the user to specify element_wise or matrix multiplcation.
-        element_wise (K.*u): Each element of the input is multiplied by each element of the gain.
-        matrix_mode1 (K*u): The input and the gain are matrix-multiplied with the input as the
+        element (K.*u): Each element of the input is multiplied by each element of the gain.
+        matrix1 (K*u): The input and the gain are matrix-multiplied with the input as the
         second operand.
-        matrix_mode2 (u*K): The input and the gain are matrix-multiplied with the input as the
+        matrix2 (u*K): The input and the gain are matrix-multiplied with the input as the
         first operand.
         Default is None(it will proceed to do it element by element).
 
@@ -74,7 +79,7 @@ class Product(base_comp.BaseComponent):
         {
             "inputs": ({"value", "constant"}, {"value", "constant"}),
             "outputs": ({}, {}),
-            "parameters": ({}, {"multiplication": None})
+            "parameters": ({}, {"mult": None})
         }
     )
 
@@ -87,5 +92,5 @@ class Product(base_comp.BaseComponent):
 
     def generate_code_string(self):
         start_str = self.name + " = "
-        mult_string = _generate_string_for_multiplication(self.inputs, self.parameters)
+        mult_string = _generate_string_for_mult(self.inputs, self.parameters)
         self.code_str["Execution"] = start_str + mult_string
