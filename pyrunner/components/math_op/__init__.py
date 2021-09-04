@@ -11,3 +11,7 @@ from .product import Product
 from .divide import Divide
 from .sqrt import Sqrt
 from .exponent import Exponent
+from .difference import Difference
+from .derivative import Derivative
+from .pid import PID
+
