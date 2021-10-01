@@ -14,20 +14,20 @@ from .. import base_comp
 
 def _generate_string_for_mult(inputs, parameters):
     # checking that type parameter is correct
-    mult_string =  ['element', 'matrix1', 'matrix2']
+    mult_string = ['element', 'matrix1', 'matrix2']
     if parameters['mult'] not in mult_string:
-        raise AttributeError('{} is not a valid mode'.format(parameters['multiplication']))
+        raise AttributeError('{} is not a valid mode'.format(parameters['mult']))
 
     code_str = ""
 
     if parameters["mult"] == "element":
-        code_str = 'np.multiply({},{})'.format(inputs["value"], inputs["constant"])
+        code_str = 'np.multiply({}, {})'.format(inputs["value"], inputs["constant"])
 
     elif parameters["mult"] == "matrix1":
-        code_str = 'np.dot({},{})'.format(inputs["value"], inputs["constant"])
+        code_str = 'np.dot({}, {})'.format(inputs["value"], inputs["constant"])
 
     elif parameters["mult"] == "matrix2":
-        code_str = 'np.dot({},{})'.format(inputs["constant"], inputs["value"])
+        code_str = 'np.dot({}, {})'.format(inputs["constant"], inputs["value"])
 
     return code_str
 

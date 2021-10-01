@@ -1,14 +1,14 @@
 from .. import base_comp
 
 
-def generate_derivative_str(inputs, parameters):
+def generate_derivative_str(comp_name, inputs, parameters):
     init_cond, sample_time = parameters["init_cond"], parameters["sample_time"]
     input_comp = inputs["value"]
 
-    setup_str = "{0}_prev_cond = {1}".format(input_comp.name, init_cond)
+    setup_str = "{0}_prev_cond = {1}".format(comp_name, init_cond)
 
-    difference_str = "(({0} - {0}_prev_cond) / {1})\n" \
-                     "\t{0}_prev_cond = {0}\n".format(input_comp.name, sample_time)
+    difference_str = "(({0} - {1}_prev_cond) / {2})\n" \
+                     "\t{1}_prev_cond = {1}\n".format(input_comp.name, comp_name, sample_time)
 
     return setup_str, difference_str
 
@@ -73,7 +73,7 @@ class Derivative(base_comp.BaseComponent):
 
         start_str = self.name + " = "
 
-        setup_str, derivative_str = generate_derivative_str(self.inputs, self.parameters)
+        setup_str, derivative_str = generate_derivative_str(self.name, self.inputs, self.parameters)
 
         self.code_str["Set Up"] = setup_str
         self.code_str["Execution"] = start_str + derivative_str

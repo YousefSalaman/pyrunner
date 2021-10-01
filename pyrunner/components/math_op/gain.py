@@ -17,11 +17,11 @@ from ..discontinuities.saturation import Saturation
 def _generate_product_component(system, parameters):
     mult = ""
     if parameters["multiplication"] == "element_wise" or parameters["multiplication"] is None:
-        mult = Product(system, multiplication="element_wise")
+        mult = Product(system, mult="element")
     elif parameters["multiplication"] == "matrix_mode1":
-        mult = Product(system, multiplication="matrix_mode1")
+        mult = Product(system, mult="matrix")
     elif parameters["multiplication"] == "matrix_mode2":
-        mult = Product(system, multiplication="matrix_mode2")
+        mult = Product(system, mult="matrix2")
 
     return mult
 
@@ -95,10 +95,10 @@ class Gain(BaseSubsystem):
 
     def _create_components(self):
         self.mult = _generate_product_component(self, self.parameters)
-        self.saturator = Saturation(self, lower_limit=self.parameters["lower_limit"],
-                                    upper_limit=self.parameters["upper_limit"], out_min=-10, out_max=1000)
-        self.saturator.inputs.update({"value": self.mult})
-        self.outputs.update({"output": self.saturator})
+        # self.saturator = Saturation(self, low_lim=self.parameters["lower_limit"],
+        #                             up_lim=self.parameters["upper_limit"], out_min=-10, out_max=1000)
+        # self.saturator.inputs.update({"value": self.mult})
+        self.outputs.update({"output": self.mult})
 
     def verify_properties(self):
         self.mult.inputs.update({"value": self.inputs["value"]})

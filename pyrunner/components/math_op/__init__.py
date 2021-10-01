@@ -14,4 +14,6 @@ from .exponent import Exponent
 from .difference import Difference
 from .derivative import Derivative
 from .pid import PID
+from .integrator import Integrator
+from .gain_proto import NewGain
 
