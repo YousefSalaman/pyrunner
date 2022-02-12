@@ -14,6 +14,36 @@ def generate_integral_str(comp_name, inputs, parameters):
 
 
 class Integrator(base_comp.BaseComponent):
+    """
+    A component that calculates the discrete time integral of the input.
+
+    Parameters
+    ----------
+
+    - init_cond: int
+        This represents the area under the input signal up until the point
+        previous to the current point being evaluated. By default this value
+        is zero (0).
+
+    - sample_time: int
+        Time that passes for a new sample to be taken. By default this value
+        is one (1).
+
+    Inputs
+    ------
+
+    - value:
+        Only accepts one input of type: int, array or component.
+
+    Outputs
+    -------
+
+    - The output represents the discrete time integral of the input.
+
+    - This is done by adding the current input value multiplied by the sampling
+    time to the previous or initial condition that was already stored.
+
+    """
 
     default_name = base_comp.generate_default_name("integral")
 
@@ -36,7 +66,7 @@ class Integrator(base_comp.BaseComponent):
 
     def generate_code_string(self):
         if self.parameters["sample_time"] == 0:
-            raise ArithmeticError("The sample time can't be zero in order to calculate the integral.")
+            raise ArithmeticError("The sample time can't be zero in order to calculate the discrete time integral.")
 
         start_str = self.name + " = "
 

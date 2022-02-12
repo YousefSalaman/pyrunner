@@ -24,8 +24,8 @@ class Derivative(base_comp.BaseComponent):
         for the component since it was not given one.
 
     - init_cond: int
-        First reference value to calculate the derivative. The default value is
-        zero (0).
+        This represents the previous input value needed to calculate the discrete
+        time derivative.
 
     - sample_time: int
         Time between each input and previous values. This value cannot be zero (0).
@@ -40,8 +40,7 @@ class Derivative(base_comp.BaseComponent):
     Outputs
     -------
 
-    - The output represents the discrete time derivative of the input based on
-    the previous condition stored on the component or the initial condition.
+    - The output represents the discrete time derivative of the input.
 
     - This simply subtracts the initial or previous condition from the input
     value and then divides that result by the sample time.
